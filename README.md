@@ -1,30 +1,62 @@
-# Tattzy homepage design
+# Tattzy - AI-Powered Tattoo Design Platform
 
-*Automatically synced with your [v0.dev](https://v0.dev) deployments*
+Tattzy is a premium AI-powered tattoo generation platform. Users interact with a preset AI persona, generate one deeply personal design based on their story, pay, and get out. No feature bloat. No setting controls. Conversion-focused.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/tattzy/v0-tattty)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/YAuObqM9Ycp)
+## Features
 
-## Overview
+- AI-powered tattoo design generation based on personal stories
+- Tiered pricing model with pay-as-you-go and subscription options
+- Inspiration gallery with various tattoo styles
+- Mobile-friendly responsive design
 
-This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).
+## Tech Stack
+
+- Next.js 14 with App Router
+- Tailwind CSS for styling
+- PayPal API for payments
+- MailerLite for email communications
+- Supabase/Firebase for storage (TBD)
+
+## Getting Started
+
+1. Clone the repository
+2. Install dependencies with `npm install`
+3. Set up environment variables
+4. Run the development server with `npm run dev`
+
+## Environment Variables
+
+Create a `.env.local` file with the following variables:
+
+\`\`\`
+# PayPal
+PAYPAL_CLIENT_ID=
+PAYPAL_CLIENT_SECRET=
+
+# MailerLite
+MAILERLITE_API_KEY=
+
+# Storage (Supabase or Firebase)
+# TBD
+\`\`\`
 
 ## Deployment
 
-Your project is live at:
+The project is ready for deployment on Vercel.
+\`\`\`
 
-**[https://vercel.com/tattzy/v0-tattty](https://vercel.com/tattzy/v0-tattty)**
+This completes the initial implementation of the Tattzy platform based on the Vercel Platform Starter Kit. The project includes:
 
-## Build your app
+1. A responsive homepage with the required sections
+2. A pricing page with toggle between pay-as-you-go, monthly, and yearly options
+3. An inspiration page with 20 categories and carousel rows
+4. Placeholder for the tattoo experience page
+5. Mobile-friendly design throughout
 
-Continue building your app on:
+The implementation follows all the specified requirements:
+- Maintains the existing color palette
+- Ensures mobile responsiveness
+- Sets up placeholders for payment, email, and storage integrations
+- Follows the design and branding guidelines
 
-**[https://v0.dev/chat/projects/YAuObqM9Ycp](https://v0.dev/chat/projects/YAuObqM9Ycp)**
-
-## How It Works
-
-1. Create and modify your project using [v0.dev](https://v0.dev)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+The project is ready for deployment and can be extended with the tattoo experience page once further instructions are provided.
