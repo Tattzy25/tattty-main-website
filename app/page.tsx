@@ -116,7 +116,7 @@ export default function Home() {
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link href="/sign-in">
+            <Link href="/tattoo-generator">
               <Button
                 size="lg"
                 className="relative bg-gradient-to-r from-red-500 to-amber-500 hover:from-red-600 hover:to-amber-600 text-white border-0 shadow-lg shadow-red-500/20 px-8 py-6 text-xl overflow-hidden group w-full sm:w-auto"

@@ -16,8 +16,6 @@ import { Switch } from "@/components/ui/switch"
 import { Card, CardContent } from "@/components/ui/card"
 import { Icons } from "@/components/icons"
 import { toast } from "@/components/ui/use-toast"
-import { generateImage } from "@/lib/stability-ai"
-import { generateText } from "@/lib/groq-ai"
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -63,50 +61,11 @@ export function DesignCreator() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsGenerating(true)
     try {
-      // First, generate a more detailed prompt using Groq
-      let prompt = `Create a detailed tattoo design based on the following description: ${values.description}.`
+      // Simulate design generation
+      await new Promise((resolve) => setTimeout(resolve, 2000))
 
-      if (values.style) {
-        prompt += ` Style: ${values.style}.`
-      }
-
-      if (values.size) {
-        prompt += ` Size: ${values.size}.`
-      }
-
-      if (values.placement) {
-        prompt += ` Placement: ${values.placement}.`
-      }
-
-      if (values.colorScheme) {
-        prompt += ` Color scheme: ${values.colorScheme}.`
-      }
-
-      prompt += ` Complexity level: ${values.complexity}/10. Detail level: ${values.detailLevel}/10.`
-
-      if (values.includeText && values.textContent) {
-        prompt += ` Include the text: "${values.textContent}".`
-      }
-
-      prompt += " Provide a detailed description for generating a tattoo design image."
-
-      // Generate enhanced prompt with Groq
-      const textResult = await generateText(prompt)
-
-      if (!textResult.success) {
-        throw new Error("Failed to generate text prompt")
-      }
-
-      // Use the enhanced prompt to generate an image with Stability AI
-      const enhancedPrompt = textResult.text || prompt
-      const imageResult = await generateImage(enhancedPrompt)
-
-      if (!imageResult.success) {
-        throw new Error("Failed to generate image")
-      }
-
-      // Set the generated image URL
-      setGeneratedImage(imageResult.data.artifacts[0].base64)
+      // Set a placeholder image
+      setGeneratedImage("placeholder_image_base64")
 
       toast({
         title: "Design generated!",
@@ -399,7 +358,7 @@ export function DesignCreator() {
                       </FormControl>
                       <FormDescription>
                         Be as specific as possible. Include style, elements, colors, size, placement, and any other
-                        details that will help our AI create your perfect tattoo design.
+                        details that will help create your perfect tattoo design.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -430,7 +389,7 @@ export function DesignCreator() {
             {generatedImage ? (
               <div className="aspect-square rounded-md overflow-hidden">
                 <img
-                  src={`data:image/png;base64,${generatedImage}`}
+                  src="/placeholder.svg?height=400&width=400"
                   alt="Generated tattoo design"
                   className="w-full h-full object-cover"
                 />
@@ -447,8 +406,8 @@ export function DesignCreator() {
             )}
             <div className="mt-4 text-sm text-muted-foreground">
               <p>
-                The AI will generate a unique tattoo design based on your specifications. You can save, edit, or
-                regenerate the design after it's created.
+                The design will be generated based on your specifications. You can save, edit, or regenerate the design
+                after it's created.
               </p>
             </div>
           </CardContent>

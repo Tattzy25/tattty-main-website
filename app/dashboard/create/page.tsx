@@ -45,7 +45,7 @@ export default function TattooDesignPage() {
               <Icons.image className="h-16 w-16 text-gold-500/30 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gold-500">Design Your Unique Tattoo</h3>
               <p className="text-muted-foreground max-w-md mx-auto">
-                Share your story and let our AI create a personalized tattoo design that represents your journey.
+                Share your story and create a personalized tattoo design that represents your journey.
               </p>
 
               <div className="grid gap-4 max-w-md mx-auto">

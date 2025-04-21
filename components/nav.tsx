@@ -31,10 +31,6 @@ export default function Nav() {
       name: "Pricing",
       path: "/pricing",
     },
-    {
-      name: "Tattoo Generator",
-      path: "/tattoo-generator",
-    },
   ]
 
   return (

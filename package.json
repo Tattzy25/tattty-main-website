@@ -58,11 +58,9 @@
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.6",
     "zod": "^3.24.1",
-    "@emotion/is-prop-valid": "latest",
     "@supabase/supabase-js": "latest",
     "wicg-inert": "latest",
-    "focus-trap-react": "latest",
-    "framer-motion": "latest"
+    "@supabase/auth-helpers-nextjs": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",

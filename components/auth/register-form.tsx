@@ -128,21 +128,12 @@ export function RegisterForm() {
           <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4">
         <Button
           variant="outline"
           type="button"
           disabled={isLoading}
-          className="border-gold-500/30 hover:bg-gold-500/10"
-        >
-          <Icons.google className="mr-2 h-4 w-4" />
-          Google
-        </Button>
-        <Button
-          variant="outline"
-          type="button"
-          disabled={isLoading}
-          className="border-gold-500/30 hover:bg-gold-500/10"
+          className="border-gold-500/30 hover:bg-gold-500/10 w-full"
         >
           <Icons.facebook className="mr-2 h-4 w-4" />
           Facebook
