@@ -14,7 +14,7 @@ export default function Footer() {
                 </div>
               </div>
               <span className="text-2xl font-bold bg-gradient-to-r from-red-500 via-amber-400 to-purple-600 bg-clip-text text-transparent">
-                TATTZY
+                TATTTY
               </span>
             </div>
             <p className="text-zinc-500 text-sm">
@@ -92,7 +92,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-zinc-800 mt-8 pt-8 text-center text-zinc-500 text-sm">
-          <p>© {new Date().getFullYear()} Tattzy. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Tattty. All rights reserved.</p>
         </div>
       </div>
     </footer>

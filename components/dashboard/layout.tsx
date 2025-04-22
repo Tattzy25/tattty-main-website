@@ -18,7 +18,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="container flex h-16 items-center justify-between py-4">
           <div className="flex items-center gap-4">
             <Link href="/" className="flex items-center space-x-2">
-              <span className="text-2xl font-bold text-gold-500">Tattzy</span>
+              <span className="text-2xl font-bold text-gold-500">Tattty</span>
             </Link>
           </div>
           <UserNav />

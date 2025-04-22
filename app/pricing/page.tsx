@@ -16,7 +16,7 @@ export default function PricingPage() {
       {
         name: "Free Preview",
         price: "$0",
-        description: "Just a taste of what Tattzy can do",
+        description: "Just a taste of what Tattty can do",
         features: [
           { name: "Low-resolution preview (<500px)", included: true },
           { name: "Basic design generation", included: true },
@@ -170,7 +170,7 @@ export default function PricingPage() {
         <div className="container relative z-10 px-4 sm:px-6 lg:px-8 mx-auto">
           <div className="text-center mb-16">
             <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-red-500 via-amber-400 to-purple-600 bg-clip-text text-transparent">
-              Choose Your Tattzy Experience
+              Choose Your Tattty Experience
             </h1>
             <p className="text-zinc-300 max-w-2xl mx-auto">Select the plan that best fits your tattoo design needs</p>
           </div>

@@ -112,7 +112,7 @@ export default function Home() {
           </div>
 
           <p className="text-zinc-400 text-xl mb-8">
-            Answer four questions and Tattzy will handle the rest for you ...
+            Answer four questions and Tattty will handle the rest for you ...
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center gap-4">
@@ -152,7 +152,7 @@ export default function Home() {
         <div className="container relative z-10 px-4 sm:px-6 lg:px-8 mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-red-500 via-amber-400 to-purple-600 bg-clip-text text-transparent">
-              How Tattzy Works
+              How Tattty Works
             </h2>
             <p className="text-zinc-300 max-w-2xl mx-auto">
               From your life story to a unique tattoo design in just a few simple steps
@@ -164,59 +164,132 @@ export default function Home() {
             <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-red-500 via-amber-500 to-purple-600 hidden md:block"></div>
 
             <div className="space-y-24 relative">
-              {[
-                {
-                  title: "Share Your Story",
-                  desc: "Answer 4 real questions about your life, your moments, and what matters most.",
-                  icon: <MessageSquare className="h-6 w-6 text-white" />,
-                  image: "/placeholder.svg?height=500&width=500&text=ShareYourStory",
-                },
-                {
-                  title: "AI Creates Your Design",
-                  desc: "Our advanced AI analyzes your story, identifying meaningful symbols and elements to create a personalized tattoo concept.",
-                  icon: <Zap className="h-6 w-6 text-white" />,
-                  image: "/placeholder.svg?height=500&width=500&text=AICreatesDesign",
-                  reverse: true,
-                },
-                {
-                  title: "Refine Your Tattoo",
-                  desc: "Review your custom design and request adjustments until it perfectly captures the essence of your story.",
-                  icon: <Feather className="h-6 w-6 text-white" />,
-                  image: "/placeholder.svg?height=500&width=500&text=RefineYourTattoo",
-                },
-                {
-                  title: "Bring Your Tattoo to Life",
-                  desc: "Download your design in high resolution, ready to share with your tattoo artist and bring to life on your skin.",
-                  icon: <Download className="h-6 w-6 text-white" />,
-                  image: "/placeholder.svg?height=500&width=500&text=BringToLife",
-                  reverse: true,
-                },
-              ].map((step, i) => (
-                <div
-                  key={i}
-                  className={`flex flex-col ${step.reverse ? "md:flex-row-reverse" : "md:flex-row"} items-center gap-8`}
-                >
-                  <div className="md:w-1/2 space-y-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-r from-red-500 to-amber-500 flex items-center justify-center">
-                        {step.icon}
-                      </div>
-                      <h3 className="text-2xl font-bold text-white">{step.title}</h3>
+              {/* Step 1: Share Your Story */}
+              <div className="flex flex-col md:flex-row items-center gap-8">
+                <div className="md:w-1/2 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-red-500 to-amber-500 flex items-center justify-center">
+                      <MessageSquare className="h-6 w-6 text-white" />
                     </div>
-                    <p className="text-zinc-300 text-lg">{step.desc}</p>
+                    <h3 className="text-2xl font-bold text-white">Share Your Story</h3>
                   </div>
-
-                  <div className="md:w-1/2 relative">
-                    <div className="absolute -inset-4 bg-gradient-to-r from-red-500/20 via-amber-500/20 to-purple-600/20 rounded-lg blur-xl"></div>
-                    <div className="relative rounded-lg overflow-hidden border border-zinc-800 shadow-2xl w-full max-w-[500px] h-[300px] sm:h-[400px] md:h-[500px] mx-auto">
-                      <Image src={step.image || "/placeholder.svg"} alt={step.title} fill className="object-cover" />
-                    </div>
-
-                    {/* Connection Point */}
-                    <div className="absolute top-1/2 left-0 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-gradient-to-r from-red-500 to-amber-500 hidden md:block"></div>
-                  </div>
+                  <p className="text-zinc-300 text-lg">
+                    Answer 4 real questions about your life, your moments, and what matters most.
+                  </p>
                 </div>
-              ))}
+
+                <div className="md:w-1/2 relative">
+                  <div className="absolute -inset-4 bg-gradient-to-r from-red-500/20 via-amber-500/20 to-purple-600/20 rounded-lg blur-xl"></div>
+                  <div className="relative rounded-lg overflow-hidden border border-zinc-800 shadow-2xl w-full max-w-[500px] h-[300px] sm:h-[400px] md:h-[500px] mx-auto">
+                    <Image
+                      src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/tattty.com%20image%201-nUHs3ZRW5vE9d4dbcX6ValFHoJ0UWz.png"
+                      alt="Share Your Story"
+                      fill
+                      className="object-cover"
+                      unoptimized={true}
+                    />
+                  </div>
+
+                  {/* Connection Point */}
+                  <div className="absolute top-1/2 left-0 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-gradient-to-r from-red-500 to-amber-500 hidden md:block"></div>
+                </div>
+              </div>
+
+              {/* Step 2: AI Creates Your Design */}
+              <div className="flex flex-col md:flex-row-reverse items-center gap-8">
+                <div className="md:w-1/2 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-red-500 to-amber-500 flex items-center justify-center">
+                      <Zap className="h-6 w-6 text-white" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-white">AI Creates Your Design</h3>
+                  </div>
+                  <p className="text-zinc-300 text-lg">
+                    Our advanced AI analyzes your story, identifying meaningful symbols and elements to create a
+                    personalized tattoo concept.
+                  </p>
+                </div>
+
+                <div className="md:w-1/2 relative">
+                  <div className="absolute -inset-4 bg-gradient-to-r from-red-500/20 via-amber-500/20 to-purple-600/20 rounded-lg blur-xl"></div>
+                  <div className="relative rounded-lg overflow-hidden border border-zinc-800 shadow-2xl w-full max-w-[500px] h-[300px] sm:h-[400px] md:h-[500px] mx-auto">
+                    <Image
+                      src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/tattty.com%20image%202-DhZDiut5rg1eKnq31WHQJP8gjLrQyv.png"
+                      alt="AI Creates Your Design"
+                      fill
+                      className="object-cover"
+                      unoptimized={true}
+                    />
+                  </div>
+
+                  {/* Connection Point */}
+                  <div className="absolute top-1/2 left-0 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-gradient-to-r from-red-500 to-amber-500 hidden md:block"></div>
+                </div>
+              </div>
+
+              {/* Step 3: Refine Your Tattoo */}
+              <div className="flex flex-col md:flex-row items-center gap-8">
+                <div className="md:w-1/2 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-red-500 to-amber-500 flex items-center justify-center">
+                      <Feather className="h-6 w-6 text-white" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-white">Refine Your Tattoo</h3>
+                  </div>
+                  <p className="text-zinc-300 text-lg">
+                    Review your custom design and request adjustments until it perfectly captures the essence of your
+                    story.
+                  </p>
+                </div>
+
+                <div className="md:w-1/2 relative">
+                  <div className="absolute -inset-4 bg-gradient-to-r from-red-500/20 via-amber-500/20 to-purple-600/20 rounded-lg blur-xl"></div>
+                  <div className="relative rounded-lg overflow-hidden border border-zinc-800 shadow-2xl w-full max-w-[500px] h-[300px] sm:h-[400px] md:h-[500px] mx-auto">
+                    <Image
+                      src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/tattty.com%20image%203-n2rnMJEJ39bAkQO5JThQ6vtZJDcFYJ.png"
+                      alt="Refine Your Tattoo"
+                      fill
+                      className="object-cover"
+                      unoptimized={true}
+                    />
+                  </div>
+
+                  {/* Connection Point */}
+                  <div className="absolute top-1/2 left-0 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-gradient-to-r from-red-500 to-amber-500 hidden md:block"></div>
+                </div>
+              </div>
+
+              {/* Step 4: Bring Your Tattoo to Life */}
+              <div className="flex flex-col md:flex-row-reverse items-center gap-8">
+                <div className="md:w-1/2 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-red-500 to-amber-500 flex items-center justify-center">
+                      <Download className="h-6 w-6 text-white" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-white">Bring Your Tattoo to Life</h3>
+                  </div>
+                  <p className="text-zinc-300 text-lg">
+                    Download your design in high resolution, ready to share with your tattoo artist and bring to life on
+                    your skin.
+                  </p>
+                </div>
+
+                <div className="md:w-1/2 relative">
+                  <div className="absolute -inset-4 bg-gradient-to-r from-red-500/20 via-amber-500/20 to-purple-600/20 rounded-lg blur-xl"></div>
+                  <div className="relative rounded-lg overflow-hidden border border-zinc-800 shadow-2xl w-full max-w-[500px] h-[300px] sm:h-[400px] md:h-[500px] mx-auto">
+                    <Image
+                      src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/tattty.com%20image%204%20welcome%20to%20tatttys%20number%204-XbpOD1acqB0kmDAuhUGgrwuQpYul86.png"
+                      alt="Bring Your Tattoo to Life"
+                      fill
+                      className="object-cover"
+                      unoptimized={true}
+                    />
+                  </div>
+
+                  {/* Connection Point */}
+                  <div className="absolute top-1/2 left-0 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-gradient-to-r from-red-500 to-amber-500 hidden md:block"></div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -239,7 +312,7 @@ export default function Home() {
         <div className="container relative z-10 px-4 sm:px-6 lg:px-8 mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-red-500 via-amber-400 to-purple-600 bg-clip-text text-transparent">
-              The Tattzy Difference
+              The Tattty Difference
             </h2>
             <p className="text-zinc-300 max-w-2xl mx-auto">What makes our AI tattoo generation truly legendary</p>
           </div>

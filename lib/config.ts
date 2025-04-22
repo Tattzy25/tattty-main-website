@@ -1,12 +1,12 @@
 export const siteConfig = {
-  name: "Tattzy",
+  name: "Tattty",
   description: "Transform your personal story into a unique tattoo design with AI.",
-  url: "https://tattzy.com",
-  ogImage: "https://tattzy.com/og.jpg",
+  url: "https://tattty.com",
+  ogImage: "https://tattty.com/og.jpg",
   links: {
-    twitter: "https://twitter.com/tattzy",
-    instagram: "https://instagram.com/tattzy",
-    facebook: "https://facebook.com/tattzy",
+    twitter: "https://twitter.com/tattty",
+    instagram: "https://instagram.com/tattty",
+    facebook: "https://facebook.com/tattty",
   },
 }
 

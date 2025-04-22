@@ -1,6 +1,6 @@
-# Tattzy - AI-Powered Tattoo Design Platform
+# Tattty - AI-Powered Tattoo Design Platform
 
-Tattzy is a premium AI-powered tattoo generation platform. Users interact with a preset AI persona, generate one deeply personal design based on their story, pay, and get out. No feature bloat. No setting controls. Conversion-focused.
+Tattty is a premium AI-powered tattoo generation platform. Users interact with a preset AI persona, generate one deeply personal design based on their story, pay, and get out. No feature bloat. No setting controls. Conversion-focused.
 
 ## Features
 
@@ -43,9 +43,8 @@ MAILERLITE_API_KEY=
 ## Deployment
 
 The project is ready for deployment on Vercel.
-\`\`\`
 
-This completes the initial implementation of the Tattzy platform based on the Vercel Platform Starter Kit. The project includes:
+This completes the initial implementation of the Tattty platform based on the Vercel Platform Starter Kit. The project includes:
 
 1. A responsive homepage with the required sections
 2. A pricing page with toggle between pay-as-you-go, monthly, and yearly options

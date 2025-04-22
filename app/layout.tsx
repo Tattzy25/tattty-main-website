@@ -4,8 +4,8 @@ import ClientLayout from "./ClientLayout"
 
 export const metadata: Metadata = {
   title: {
-    default: "Tattzy - AI-Powered Tattoo Design",
-    template: "%s | Tattzy",
+    default: "Tattty - AI-Powered Tattoo Design",
+    template: "%s | Tattty",
   },
   description: "Transform your personal story into a unique tattoo design with AI.",
   icons: {
