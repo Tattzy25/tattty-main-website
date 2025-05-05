@@ -19,17 +19,158 @@ interface Category {
   }[]
 }
 
+// Define our tattoo categories with empty image arrays
+// These will be populated with real images
+const tattooCategories: Category[] = [
+  {
+    id: 1,
+    name: "Traditional",
+    images: [],
+  },
+  {
+    id: 2,
+    name: "Neo-Traditional",
+    images: [],
+  },
+  {
+    id: 3,
+    name: "Realism",
+    images: [],
+  },
+  {
+    id: 4,
+    name: "Watercolor",
+    images: [],
+  },
+  {
+    id: 5,
+    name: "Tribal",
+    images: [],
+  },
+  {
+    id: 6,
+    name: "Japanese",
+    images: [],
+  },
+  {
+    id: 7,
+    name: "Blackwork",
+    images: [],
+  },
+  {
+    id: 8,
+    name: "Minimalist",
+    images: [],
+  },
+  {
+    id: 9,
+    name: "Geometric",
+    images: [],
+  },
+  {
+    id: 10,
+    name: "Dotwork",
+    images: [],
+  },
+  {
+    id: 11,
+    name: "Old School",
+    images: [],
+  },
+  {
+    id: 12,
+    name: "New School",
+    images: [],
+  },
+  {
+    id: 13,
+    name: "Biomechanical",
+    images: [],
+  },
+  {
+    id: 14,
+    name: "Portrait",
+    images: [],
+  },
+  {
+    id: 15,
+    name: "Script",
+    images: [],
+  },
+  {
+    id: 16,
+    name: "Floral",
+    images: [],
+  },
+  {
+    id: 17,
+    name: "Animal",
+    images: [],
+  },
+  {
+    id: 18,
+    name: "Mandala",
+    images: [],
+  },
+  {
+    id: 19,
+    name: "Abstract",
+    images: [],
+  },
+  {
+    id: 20,
+    name: "Surrealism",
+    images: [],
+  },
+]
+
+// This function will be used to add images to categories
+// You'll call this function with your image URLs
+export function addImagesToCategory(categoryId: number, imageUrls: string[]) {
+  const category = tattooCategories.find((cat) => cat.id === categoryId)
+  if (category) {
+    const startId = category.images.length + 1
+    const newImages = imageUrls.map((url, index) => ({
+      id: startId + index,
+      url,
+      alt: `${category.name} tattoo design ${startId + index}`,
+    }))
+    category.images.push(...newImages)
+  }
+}
+
+// Example of how to add images (you'll replace these with your actual URLs)
+// This is just for demonstration - you'll provide your own URLs
+addImagesToCategory(1, [
+  "/placeholder.svg?height=300&width=300&text=Traditional_1",
+  "/placeholder.svg?height=300&width=300&text=Traditional_2",
+  "/placeholder.svg?height=300&width=300&text=Traditional_3",
+])
+
 export default function InspirationPage() {
-  // Generate 20 placeholder categories
-  const categories: Category[] = Array.from({ length: 20 }, (_, i) => ({
-    id: i + 1,
-    name: getCategoryName(i),
-    images: Array.from({ length: 10 }, (_, j) => ({
-      id: j + 1,
-      url: `/placeholder.svg?height=300&width=300&text=${getCategoryName(i)}_${j + 1}`,
-      alt: `${getCategoryName(i)} tattoo design ${j + 1}`,
-    })),
-  }))
+  // Filter out categories with no images
+  const categories = tattooCategories.filter((category) => category.images.length > 0)
+
+  // If no categories have images yet, show a message
+  if (categories.length === 0) {
+    return (
+      <MainLayout>
+        <div className="py-24 relative">
+          <div className="absolute inset-0 bg-gradient-to-b from-black via-zinc-900 to-black"></div>
+          <div className="container relative z-10 px-4 sm:px-6 lg:px-8 mx-auto">
+            <div className="text-center mb-16">
+              <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-red-500 via-amber-400 to-purple-600 bg-clip-text text-transparent">
+                Tattoo Inspiration
+              </h1>
+              <p className="text-zinc-300 max-w-2xl mx-auto">
+                We're currently adding tattoo designs to our gallery. Check back soon for inspiration!
+              </p>
+            </div>
+          </div>
+        </div>
+      </MainLayout>
+    )
+  }
 
   return (
     <MainLayout>
@@ -59,7 +200,7 @@ export default function InspirationPage() {
               >
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent z-10"></div>
                 <Image
-                  src={category.images[0].url || "/placeholder.svg"}
+                  src={category.images[0]?.url || "/placeholder.svg"}
                   alt={category.name}
                   width={400}
                   height={300}
@@ -83,33 +224,6 @@ export default function InspirationPage() {
       </div>
     </MainLayout>
   )
-}
-
-// Helper function to generate category names
-function getCategoryName(index: number): string {
-  const categories = [
-    "Traditional",
-    "Neo-Traditional",
-    "Realism",
-    "Watercolor",
-    "Tribal",
-    "Japanese",
-    "Blackwork",
-    "Minimalist",
-    "Geometric",
-    "Dotwork",
-    "Old School",
-    "New School",
-    "Biomechanical",
-    "Portrait",
-    "Script",
-    "Floral",
-    "Animal",
-    "Mandala",
-    "Abstract",
-    "Surrealism",
-  ]
-  return categories[index % categories.length]
 }
 
 // Category Carousel Component

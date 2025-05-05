@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react"
+import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
@@ -16,6 +16,9 @@ import { Switch } from "@/components/ui/switch"
 import { Card, CardContent } from "@/components/ui/card"
 import { Icons } from "@/components/icons"
 import { toast } from "@/components/ui/use-toast"
+import { ImageUpload } from "@/components/ui/image-upload"
+import { uploadTattooDesign } from "@/app/actions/upload"
+import { supabase } from "@/lib/supabase"
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -37,8 +40,22 @@ const formSchema = z.object({
 export function DesignCreator() {
   const router = useRouter()
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [generatedImage, setGeneratedImage] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState("guided")
+  const [userId, setUserId] = useState<string | null>(null)
+
+  // Get the current user ID
+  useState(() => {
+    const getUserId = async () => {
+      const { data } = await supabase.auth.getUser()
+      if (data?.user) {
+        setUserId(data.user.id)
+      }
+    }
+    getUserId()
+  })
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -59,34 +76,85 @@ export function DesignCreator() {
   const watchIncludeText = form.watch("includeText")
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsGenerating(true)
-    try {
-      // Simulate design generation
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-
-      // Set a placeholder image
-      setGeneratedImage("placeholder_image_base64")
-
-      toast({
-        title: "Design generated!",
-        description: "Your tattoo design has been created successfully.",
-      })
-
-      // In a real app, you would save the design to the database here
-      // For now, we'll just simulate a successful generation
-      setTimeout(() => {
-        router.push("/dashboard/designs")
-      }, 3000)
-    } catch (error) {
-      console.error("Error generating design:", error)
+    if (!userId) {
       toast({
         title: "Error",
-        description: "Failed to generate design. Please try again.",
+        description: "You must be logged in to create a design",
         variant: "destructive",
       })
-    } finally {
-      setIsGenerating(false)
+      return
     }
+
+    if (selectedFile) {
+      // Upload the file
+      setIsUploading(true)
+
+      const formData = new FormData()
+      formData.append("userId", userId)
+      formData.append("title", values.name)
+      formData.append("description", values.description)
+      formData.append("style", values.style || "custom")
+      formData.append("file", selectedFile)
+
+      const result = await uploadTattooDesign(formData)
+
+      setIsUploading(false)
+
+      if (result.success) {
+        toast({
+          title: "Design uploaded!",
+          description: "Your tattoo design has been saved successfully.",
+        })
+
+        // Navigate to the designs page
+        router.push("/dashboard/designs")
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Failed to upload design. Please try again.",
+          variant: "destructive",
+        })
+      }
+    } else {
+      // Generate AI design
+      setIsGenerating(true)
+      try {
+        // Simulate design generation
+        await new Promise((resolve) => setTimeout(resolve, 2000))
+
+        // Set a placeholder image
+        setGeneratedImage("/placeholder.svg?height=400&width=400")
+
+        toast({
+          title: "Design generated!",
+          description: "Your tattoo design has been created successfully.",
+        })
+
+        // In a real app, you would save the design to the database here
+        // For now, we'll just simulate a successful generation
+        setTimeout(() => {
+          router.push("/dashboard/designs")
+        }, 3000)
+      } catch (error) {
+        console.error("Error generating design:", error)
+        toast({
+          title: "Error",
+          description: "Failed to generate design. Please try again.",
+          variant: "destructive",
+        })
+      } finally {
+        setIsGenerating(false)
+      }
+    }
+  }
+
+  const handleFileUpload = (file: File) => {
+    setSelectedFile(file)
+    setGeneratedImage(null) // Clear any generated image
+  }
+
+  const handleFileRemove = () => {
+    setSelectedFile(null)
   }
 
   return (
@@ -253,6 +321,17 @@ export function DesignCreator() {
                   )}
                 />
 
+                {/* Upload your own design */}
+                <div className="border border-gold-500/20 rounded-lg p-4">
+                  <h3 className="text-lg font-medium text-gold-300 mb-4">Upload Your Own Design</h3>
+                  <ImageUpload
+                    onUpload={handleFileUpload}
+                    onRemove={handleFileRemove}
+                    label="Upload a design image"
+                    loading={isUploading}
+                  />
+                </div>
+
                 <div className="space-y-4">
                   <FormField
                     control={form.control}
@@ -364,12 +443,35 @@ export function DesignCreator() {
                     </FormItem>
                   )}
                 />
+
+                {/* Upload your own design */}
+                <div className="border border-gold-500/20 rounded-lg p-4 mt-6">
+                  <h3 className="text-lg font-medium text-gold-300 mb-4">Upload Your Own Design</h3>
+                  <ImageUpload
+                    onUpload={handleFileUpload}
+                    onRemove={handleFileRemove}
+                    label="Upload a design image"
+                    loading={isUploading}
+                  />
+                </div>
               </TabsContent>
 
-              <Button type="submit" className="w-full bg-gold-500 hover:bg-gold-600 text-black" disabled={isGenerating}>
+              <Button
+                type="submit"
+                className="w-full bg-gold-500 hover:bg-gold-600 text-black"
+                disabled={isGenerating || isUploading}
+              >
                 {isGenerating ? (
                   <>
                     <Icons.spinner className="mr-2 h-4 w-4 animate-spin" /> Generating Design...
+                  </>
+                ) : isUploading ? (
+                  <>
+                    <Icons.spinner className="mr-2 h-4 w-4 animate-spin" /> Uploading Design...
+                  </>
+                ) : selectedFile ? (
+                  <>
+                    <Icons.upload className="mr-2 h-4 w-4" /> Upload Design
                   </>
                 ) : (
                   <>
@@ -389,8 +491,16 @@ export function DesignCreator() {
             {generatedImage ? (
               <div className="aspect-square rounded-md overflow-hidden">
                 <img
-                  src="/placeholder.svg?height=400&width=400"
+                  src={generatedImage || "/placeholder.svg"}
                   alt="Generated tattoo design"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : selectedFile ? (
+              <div className="aspect-square rounded-md overflow-hidden">
+                <img
+                  src={URL.createObjectURL(selectedFile) || "/placeholder.svg"}
+                  alt="Selected tattoo design"
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -399,15 +509,16 @@ export function DesignCreator() {
                 <div className="text-center p-4">
                   <Icons.image className="h-12 w-12 text-gold-500/30 mx-auto mb-4" />
                   <p className="text-muted-foreground text-sm">
-                    Your design preview will appear here after generation.
+                    Your design preview will appear here after generation or upload.
                   </p>
                 </div>
               </div>
             )}
             <div className="mt-4 text-sm text-muted-foreground">
               <p>
-                The design will be generated based on your specifications. You can save, edit, or regenerate the design
-                after it's created.
+                {selectedFile
+                  ? "Your uploaded design will be saved to your account."
+                  : "The design will be generated based on your specifications. You can save, edit, or regenerate the design after it's created."}
               </p>
             </div>
           </CardContent>

@@ -65,6 +65,12 @@ export default function Nav() {
                 {route.name}
               </Link>
             ))}
+            <Link
+              href="/tattoo-generator"
+              className="text-sm font-medium transition-colors hover:text-amber-400 text-zinc-300"
+            >
+              Tattoo Generator
+            </Link>
             {isSignedIn ? (
               <div className="flex items-center gap-4">
                 <Link href="/dashboard">
@@ -139,6 +145,13 @@ export default function Nav() {
               {route.name}
             </Link>
           ))}
+          <Link
+            href="/tattoo-generator"
+            className="block px-3 py-2 rounded-md text-base font-medium text-zinc-300 hover:bg-zinc-800 hover:text-white"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            Tattoo Generator
+          </Link>
           {!isSignedIn ? (
             <>
               <button

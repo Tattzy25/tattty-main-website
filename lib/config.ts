@@ -1,7 +1,13 @@
+// Environment variables
+export const STABILITY_API_KEY = process.env.STABILITY_API_KEY || ""
+export const GROQ_API_KEY = process.env.GROQ_API_KEY || ""
+export const PEXELS_API_KEY = process.env.PEXELS_API_KEY || ""
+
+// Site configuration
 export const siteConfig = {
   name: "Tattty",
-  description: "Transform your personal story into a unique tattoo design with AI.",
-  url: "https://tattty.com",
+  description: "Create personalized tattoo designs based on your life story",
+  url: process.env.NEXT_PUBLIC_APP_URL || "https://tattty.com",
   ogImage: "https://tattty.com/og.jpg",
   links: {
     twitter: "https://twitter.com/tattty",
