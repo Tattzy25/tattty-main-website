@@ -140,3 +140,13 @@ export async function listBlobFiles(prefix: string): Promise<string[]> {
     return []
   }
 }
+
+/**
+ * Creates a blob (alias for uploadToBlob for compatibility)
+ */
+export const createBlob = uploadToBlob
+
+/**
+ * Deletes a blob (alias for deleteFromBlob for compatibility)
+ */
+export const deleteBlob = deleteFromBlob

@@ -1,8 +1,70 @@
+import { generateText } from "ai"
+import { groq } from "@ai-sdk/groq"
+
 /**
  * Specialized function for generating detailed tattoo design prompts
- * This can be used directly when needed without going through the API
+ * Uses AI to create high-quality prompts based on user input
  */
-export function generateSpecializedTattooPrompt(input: {
+export async function generateSpecializedTattooPrompt(input: {
+  lifeStory?: string
+  emotions?: string[]
+  symbols?: string[]
+  style?: string
+  themes?: string[]
+  placement?: string
+  colors?: string[]
+}): Promise<string> {
+  try {
+    const {
+      lifeStory = "",
+      emotions = [],
+      symbols = [],
+      style = "realistic",
+      themes = [],
+      placement = "",
+      colors = [],
+    } = input
+
+    // Create a prompt for the AI to generate a specialized tattoo prompt
+    const aiPrompt = `
+      Create a detailed prompt for an AI image generator to create a tattoo design.
+      Use these elements provided by the user:
+      
+      ${lifeStory ? `Life Story: ${lifeStory}` : ""}
+      ${emotions.length > 0 ? `Emotions: ${emotions.join(", ")}` : ""}
+      ${symbols.length > 0 ? `Symbols: ${symbols.join(", ")}` : ""}
+      Style: ${style}
+      ${themes.length > 0 ? `Themes: ${themes.join(", ")}` : ""}
+      ${placement ? `Placement: ${placement}` : ""}
+      ${colors.length > 0 ? `Colors: ${colors.join(", ")}` : ""}
+      
+      The prompt should be detailed, descriptive, and optimized for generating a high-quality tattoo design.
+      Focus on creating a prompt that will result in a design with clean lines suitable for tattooing,
+      proper contrast that will age well, and a meaningful composition that flows with the body's natural contours.
+      
+      Return only the prompt text with no additional commentary.
+    `
+
+    // Generate the specialized prompt using AI
+    const { text } = await generateText({
+      model: groq("llama3-70b-8192"),
+      prompt: aiPrompt,
+      maxTokens: 500,
+    })
+
+    return text.trim()
+  } catch (error) {
+    console.error("Error generating specialized tattoo prompt:", error)
+
+    // Fall back to manual prompt generation
+    return fallbackGeneratePrompt(input)
+  }
+}
+
+/**
+ * Fallback function for generating a prompt without AI
+ */
+function fallbackGeneratePrompt(input: {
   lifeStory?: string
   emotions?: string[]
   symbols?: string[]
@@ -96,12 +158,34 @@ export function generateSpecializedTattooPrompt(input: {
 
 /**
  * Enhances a basic prompt with additional details and styling
- * Export as both named export and property
+ * Uses AI to improve the prompt quality
  */
 export async function enhancePrompt(basePrompt: string): Promise<string> {
-  // This is a simplified version that just returns the base prompt
-  // In a real implementation, this might call an AI service to enhance the prompt
-  return basePrompt
+  try {
+    // Create a prompt for the AI to enhance the base prompt
+    const aiPrompt = `
+      Enhance the following tattoo design prompt to make it more detailed and optimized for AI image generation.
+      Add specific details about composition, style, lighting, and technical aspects that would make it a better tattoo.
+      
+      Original prompt: "${basePrompt}"
+      
+      Return only the enhanced prompt with no additional commentary.
+    `
+
+    // Generate the enhanced prompt using AI
+    const { text } = await generateText({
+      model: groq("llama3-70b-8192"),
+      prompt: aiPrompt,
+      maxTokens: 500,
+    })
+
+    return text.trim()
+  } catch (error) {
+    console.error("Error enhancing prompt:", error)
+
+    // If AI enhancement fails, return the original prompt
+    return basePrompt
+  }
 }
 
 // Add as property on the module exports

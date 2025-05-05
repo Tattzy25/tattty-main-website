@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import Image from "next/image"
@@ -7,7 +9,8 @@ import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { DashboardLayout } from "@/components/dashboard/layout"
 import { Icons } from "@/components/icons"
-import { getDesignById } from "@/lib/supabase"
+import { supabase } from "@/lib/supabase"
+import { toast } from "@/components/ui/use-toast"
 
 export default function ARPreviewPage() {
   const searchParams = useSearchParams()
@@ -19,9 +22,11 @@ export default function ARPreviewPage() {
   const [scale, setScale] = useState(50)
   const [rotation, setRotation] = useState(0)
   const [opacity, setOpacity] = useState(80)
+  const [isDragging, setIsDragging] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationRef = useRef<number>()
+  const tattooImageRef = useRef<HTMLImageElement | null>(null)
 
   useEffect(() => {
     if (designId) {
@@ -29,14 +34,38 @@ export default function ARPreviewPage() {
     } else {
       setLoading(false)
     }
+
+    // Cleanup function to stop camera when component unmounts
+    return () => {
+      stopCamera()
+    }
   }, [designId])
 
   const fetchDesign = async (id: string) => {
     try {
-      const designData = await getDesignById(id)
-      setDesign(designData)
+      // Get design from database
+      const { data, error } = await supabase.from("tattoo_designs").select("*").eq("id", id).single()
+
+      if (error) throw error
+
+      setDesign(data)
+
+      // Preload the tattoo image
+      if (data?.image_url) {
+        const img = new Image()
+        img.crossOrigin = "anonymous"
+        img.src = data.image_url
+        img.onload = () => {
+          tattooImageRef.current = img
+        }
+      }
     } catch (error) {
       console.error("Error fetching design:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load the design. Please try again.",
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }
@@ -44,19 +73,40 @@ export default function ARPreviewPage() {
 
   const startCamera = async () => {
     try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("Camera access is not supported in your browser")
+      }
+
       if (videoRef.current) {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" },
-        })
-        videoRef.current.srcObject = stream
+        // Try to use the environment-facing camera first (back camera on mobile)
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "environment" },
+          })
+          videoRef.current.srcObject = stream
+        } catch (err) {
+          // Fall back to any available camera
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+          })
+          videoRef.current.srcObject = stream
+        }
+
         videoRef.current.onloadedmetadata = () => {
-          videoRef.current?.play()
-          setCameraActive(true)
-          startARPreview()
+          if (videoRef.current) {
+            videoRef.current.play()
+            setCameraActive(true)
+            startARPreview()
+          }
         }
       }
     } catch (error) {
       console.error("Error accessing camera:", error)
+      toast({
+        title: "Camera Error",
+        description: error instanceof Error ? error.message : "Failed to access your camera",
+        variant: "destructive",
+      })
     }
   }
 
@@ -78,9 +128,15 @@ export default function ARPreviewPage() {
     const ctx = canvasRef.current.getContext("2d")
     if (!ctx) return
 
-    const tattooImage = new Image()
-    tattooImage.src = design.image_url
-    tattooImage.crossOrigin = "anonymous"
+    // If we haven't preloaded the image yet, do it now
+    if (!tattooImageRef.current) {
+      const tattooImage = new Image()
+      tattooImage.crossOrigin = "anonymous"
+      tattooImage.src = design.image_url
+      tattooImage.onload = () => {
+        tattooImageRef.current = tattooImage
+      }
+    }
 
     const drawFrame = () => {
       if (!canvasRef.current || !videoRef.current) return
@@ -92,44 +148,193 @@ export default function ARPreviewPage() {
       // Draw video frame
       ctx.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height)
 
-      // Calculate tattoo position and size
-      const tattooWidth = (canvasRef.current.width * scale) / 100
-      const tattooHeight = (tattooImage.height / tattooImage.width) * tattooWidth
-      const tattooX = (canvasRef.current.width * position.x) / 100 - tattooWidth / 2
-      const tattooY = (canvasRef.current.height * position.y) / 100 - tattooHeight / 2
+      // Draw tattoo if image is loaded
+      if (tattooImageRef.current) {
+        // Calculate tattoo position and size
+        const tattooWidth = (canvasRef.current.width * scale) / 100
+        const tattooHeight = (tattooImageRef.current.height / tattooImageRef.current.width) * tattooWidth
+        const tattooX = (canvasRef.current.width * position.x) / 100 - tattooWidth / 2
+        const tattooY = (canvasRef.current.height * position.y) / 100 - tattooHeight / 2
 
-      // Save context state
-      ctx.save()
+        // Save context state
+        ctx.save()
 
-      // Translate to center of tattoo for rotation
-      ctx.translate(tattooX + tattooWidth / 2, tattooY + tattooHeight / 2)
-      ctx.rotate((rotation * Math.PI) / 180)
+        // Translate to center of tattoo for rotation
+        ctx.translate(tattooX + tattooWidth / 2, tattooY + tattooHeight / 2)
+        ctx.rotate((rotation * Math.PI) / 180)
 
-      // Set opacity
-      ctx.globalAlpha = opacity / 100
+        // Set opacity
+        ctx.globalAlpha = opacity / 100
 
-      // Draw tattoo
-      ctx.drawImage(tattooImage, -tattooWidth / 2, -tattooHeight / 2, tattooWidth, tattooHeight)
+        // Draw tattoo
+        ctx.drawImage(tattooImageRef.current, -tattooWidth / 2, -tattooHeight / 2, tattooWidth, tattooHeight)
 
-      // Restore context state
-      ctx.restore()
+        // Restore context state
+        ctx.restore()
+      }
 
       // Continue animation
       animationRef.current = requestAnimationFrame(drawFrame)
     }
 
-    tattooImage.onload = () => {
-      drawFrame()
-    }
+    drawFrame()
   }
 
   const takeScreenshot = () => {
     if (!canvasRef.current) return
 
-    const link = document.createElement("a")
-    link.download = `tattty-ar-preview-${Date.now()}.png`
-    link.href = canvasRef.current.toDataURL("image/png")
-    link.click()
+    try {
+      // Create a download link
+      const link = document.createElement("a")
+      link.download = `tattzy-ar-preview-${Date.now()}.png`
+      link.href = canvasRef.current.toDataURL("image/png")
+      link.click()
+
+      // Save screenshot to database if user is logged in
+      saveScreenshot(link.href)
+
+      toast({
+        title: "Screenshot Saved",
+        description: "Your AR preview has been saved to your device.",
+      })
+    } catch (error) {
+      console.error("Error taking screenshot:", error)
+      toast({
+        title: "Error",
+        description: "Failed to save screenshot. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const saveScreenshot = async (screenshotUrl: string) => {
+    try {
+      // Get current user
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (!user) return // Not logged in
+
+      // Convert data URL to blob
+      const res = await fetch(screenshotUrl)
+      const blob = await res.blob()
+
+      // Upload to Supabase Storage
+      const fileName = `ar-previews/${user.id}/${Date.now()}.png`
+      const { error: uploadError } = await supabase.storage.from("tattoo-designs").upload(fileName, blob)
+
+      if (uploadError) throw uploadError
+
+      // Get public URL
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("tattoo-designs").getPublicUrl(fileName)
+
+      // Save to ar_previews table
+      await supabase.from("ar_previews").insert({
+        user_id: user.id,
+        design_id: design.id,
+        image_url: publicUrl,
+        created_at: new Date().toISOString(),
+      })
+    } catch (error) {
+      console.error("Error saving screenshot to database:", error)
+      // Don't show error to user since the local download still worked
+    }
+  }
+
+  const handleCanvasMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!canvasRef.current) return
+    setIsDragging(true)
+    updateTattooPosition(e)
+  }
+
+  const handleCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (isDragging) {
+      updateTattooPosition(e)
+    }
+  }
+
+  const handleCanvasMouseUp = () => {
+    setIsDragging(false)
+  }
+
+  const handleCanvasTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    if (!canvasRef.current) return
+    setIsDragging(true)
+    updateTattooPositionTouch(e)
+  }
+
+  const handleCanvasTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    if (isDragging) {
+      updateTattooPositionTouch(e)
+      // Prevent scrolling while dragging
+      e.preventDefault()
+    }
+  }
+
+  const handleCanvasTouchEnd = () => {
+    setIsDragging(false)
+  }
+
+  const updateTattooPosition = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!canvasRef.current) return
+
+    const rect = canvasRef.current.getBoundingClientRect()
+    const x = ((e.clientX - rect.left) / rect.width) * 100
+    const y = ((e.clientY - rect.top) / rect.height) * 100
+
+    setPosition({ x, y })
+  }
+
+  const updateTattooPositionTouch = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    if (!canvasRef.current || !e.touches[0]) return
+
+    const rect = canvasRef.current.getBoundingClientRect()
+    const touch = e.touches[0]
+    const x = ((touch.clientX - rect.left) / rect.width) * 100
+    const y = ((touch.clientY - rect.top) / rect.height) * 100
+
+    setPosition({ x, y })
+  }
+
+  const switchCamera = async () => {
+    if (!videoRef.current) return
+
+    // Stop current stream
+    if (videoRef.current.srcObject) {
+      const tracks = (videoRef.current.srcObject as MediaStream).getTracks()
+      tracks.forEach((track) => track.stop())
+    }
+
+    try {
+      // Get current facing mode
+      const currentStream = videoRef.current.srcObject as MediaStream
+      const currentTrack = currentStream?.getVideoTracks()[0]
+      const currentFacingMode = currentTrack?.getSettings()?.facingMode
+
+      // Switch to opposite facing mode
+      const newFacingMode = currentFacingMode === "environment" ? "user" : "environment"
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: newFacingMode },
+      })
+
+      videoRef.current.srcObject = stream
+      videoRef.current.onloadedmetadata = () => {
+        if (videoRef.current) {
+          videoRef.current.play()
+        }
+      }
+    } catch (error) {
+      console.error("Error switching camera:", error)
+      toast({
+        title: "Camera Error",
+        description: "Failed to switch camera. Your device may only have one camera.",
+        variant: "destructive",
+      })
+    }
   }
 
   return (
@@ -138,10 +343,16 @@ export default function ARPreviewPage() {
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold tracking-tight text-gold-500">AR Tattoo Preview</h1>
           {cameraActive && (
-            <Button onClick={takeScreenshot} className="bg-gold-500 hover:bg-gold-600 text-black">
-              <Icons.camera className="mr-2 h-4 w-4" />
-              Take Screenshot
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={switchCamera} className="bg-gold-500/80 hover:bg-gold-600 text-black">
+                <Icons.flipHorizontal className="mr-2 h-4 w-4" />
+                Switch Camera
+              </Button>
+              <Button onClick={takeScreenshot} className="bg-gold-500 hover:bg-gold-600 text-black">
+                <Icons.camera className="mr-2 h-4 w-4" />
+                Take Screenshot
+              </Button>
+            </div>
           )}
         </div>
 
@@ -202,7 +413,17 @@ export default function ARPreviewPage() {
                         muted
                         style={{ display: "none" }}
                       />
-                      <canvas ref={canvasRef} className="w-full h-auto rounded-lg" />
+                      <canvas
+                        ref={canvasRef}
+                        className="w-full h-auto rounded-lg cursor-move touch-none"
+                        onMouseDown={handleCanvasMouseDown}
+                        onMouseMove={handleCanvasMouseMove}
+                        onMouseUp={handleCanvasMouseUp}
+                        onMouseLeave={handleCanvasMouseUp}
+                        onTouchStart={handleCanvasTouchStart}
+                        onTouchMove={handleCanvasTouchMove}
+                        onTouchEnd={handleCanvasTouchEnd}
+                      />
                       <Button
                         onClick={stopCamera}
                         className="absolute top-4 right-4 bg-red-500 hover:bg-red-600"
@@ -211,6 +432,9 @@ export default function ARPreviewPage() {
                         <Icons.x className="mr-2 h-4 w-4" />
                         Stop Camera
                       </Button>
+                      <div className="absolute bottom-4 left-4 right-4 bg-black/60 backdrop-blur-sm p-3 rounded-lg">
+                        <p className="text-xs text-white/80 mb-2">Drag the tattoo to position it on your body</p>
+                      </div>
                     </div>
                   )}
                 </div>

@@ -1,8 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-
-// This is a simple in-memory storage for demonstration
-// In a production app, you'd use a database
-const categoryImages: Record<number, string[]> = {}
+import { supabase } from "@/lib/supabase"
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,18 +9,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid request. Requires categoryId and imageUrls array." }, { status: 400 })
     }
 
-    // Initialize the category if it doesn't exist
-    if (!categoryImages[categoryId]) {
-      categoryImages[categoryId] = []
+    // Insert images into the database
+    const { data, error } = await supabase.from("inspiration_images").insert(
+      imageUrls.map((url) => ({
+        category_id: categoryId,
+        image_url: url,
+        created_at: new Date().toISOString(),
+      })),
+    )
+
+    if (error) {
+      console.error("Error adding images to database:", error)
+      return NextResponse.json({ error: "Failed to add images to database" }, { status: 500 })
     }
 
-    // Add the new image URLs
-    categoryImages[categoryId] = [...categoryImages[categoryId], ...imageUrls]
+    // Get count of images in this category
+    const { count, error: countError } = await supabase
+      .from("inspiration_images")
+      .select("*", { count: "exact" })
+      .eq("category_id", categoryId)
+
+    if (countError) {
+      console.error("Error counting images:", countError)
+    }
 
     return NextResponse.json({
       success: true,
       message: `Added ${imageUrls.length} images to category ${categoryId}`,
-      totalImages: categoryImages[categoryId].length,
+      totalImages: count || imageUrls.length,
     })
   } catch (error) {
     console.error("Error adding images:", error)
@@ -35,13 +48,56 @@ export async function GET(request: NextRequest) {
   const url = new URL(request.url)
   const categoryId = url.searchParams.get("categoryId")
 
-  if (categoryId) {
-    const id = Number.parseInt(categoryId)
-    return NextResponse.json({
-      categoryId: id,
-      images: categoryImages[id] || [],
-    })
-  }
+  try {
+    if (categoryId) {
+      const id = Number.parseInt(categoryId)
+      const { data, error } = await supabase
+        .from("inspiration_images")
+        .select("*")
+        .eq("category_id", id)
+        .order("created_at", { ascending: false })
 
-  return NextResponse.json(categoryImages)
+      if (error) {
+        console.error("Error fetching images:", error)
+        return NextResponse.json({ error: "Failed to fetch images" }, { status: 500 })
+      }
+
+      return NextResponse.json({
+        categoryId: id,
+        images: data.map((item) => item.image_url),
+      })
+    }
+
+    // Get all categories with their images
+    const { data: categories, error: categoriesError } = await supabase
+      .from("inspiration_categories")
+      .select("id, name")
+
+    if (categoriesError) {
+      console.error("Error fetching categories:", categoriesError)
+      return NextResponse.json({ error: "Failed to fetch categories" }, { status: 500 })
+    }
+
+    const result: Record<number, string[]> = {}
+
+    // For each category, get its images
+    for (const category of categories) {
+      const { data: images, error: imagesError } = await supabase
+        .from("inspiration_images")
+        .select("image_url")
+        .eq("category_id", category.id)
+
+      if (imagesError) {
+        console.error(`Error fetching images for category ${category.id}:`, imagesError)
+        continue
+      }
+
+      result[category.id] = images.map((img) => img.image_url)
+    }
+
+    return NextResponse.json(result)
+  } catch (error) {
+    console.error("Error in GET request:", error)
+    return NextResponse.json({ error: "Failed to process request" }, { status: 500 })
+  }
 }

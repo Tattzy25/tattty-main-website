@@ -1,158 +1,102 @@
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase"
+import { cookies } from "next/headers"
 
-/**
- * Gets reference images for AI knowledge
- */
-export async function getKnowledgeForPrompt(
-  prompt: string,
-  options: {
-    maxResults?: number
-    includeUrls?: boolean
-  } = {},
-) {
-  const { maxResults = 5, includeUrls = false } = options
+export async function getKnowledgeBase(category?: string) {
+  const cookieStore = cookies()
+  const supabase = createClient(cookieStore)
 
-  try {
-    // Extract potential keywords from the prompt
-    const keywords = extractKeywords(prompt)
+  let query = supabase.from("knowledge_base").select("*")
 
-    if (keywords.length === 0) {
-      return { success: true, data: [] }
-    }
-
-    // Build a query to find matching reference images
-    let query = supabase.from("reference_images").select("*")
-
-    // Search by keywords in tags, category, style, and description
-    const conditions = keywords.map((keyword) => {
-      return `tags.cs.{${keyword}} OR category.ilike.%${keyword}% OR style.ilike.%${keyword}%`
-    })
-
-    query = query.or(conditions.join(","))
-
-    // Get results
-    const { data, error } = await query.limit(maxResults)
-
-    if (error) throw error
-
-    // Format the results
-    const formattedData = data.map((item) => {
-      const result: any = {
-        id: item.id,
-        category: item.category,
-        style: item.style,
-        tags: item.tags,
-      }
-
-      // Only include URLs if specifically requested
-      if (includeUrls) {
-        result.storage_path = item.storage_path
-      }
-
-      return result
-    })
-
-    return {
-      success: true,
-      data: formattedData,
-    }
-  } catch (error) {
-    console.error("Error getting knowledge for prompt:", error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-      data: [],
-    }
+  if (category) {
+    query = query.eq("category", category)
   }
+
+  const { data, error } = await query.order("created_at", { ascending: false })
+
+  if (error) {
+    console.error("Error fetching knowledge base:", error)
+    return { error: error.message }
+  }
+
+  return { data }
 }
 
-/**
- * Extract potential keywords from a prompt
- */
-function extractKeywords(prompt: string): string[] {
-  // Simple keyword extraction - in production you might want to use NLP
-  const lowercasePrompt = prompt.toLowerCase()
+export async function addKnowledgeEntry(entry: {
+  title: string
+  content: string
+  category: string
+  tags?: string[]
+}) {
+  const cookieStore = cookies()
+  const supabase = createClient(cookieStore)
 
-  // Common tattoo styles
-  const styles = [
-    "traditional",
-    "neo-traditional",
-    "realism",
-    "watercolor",
-    "tribal",
-    "japanese",
-    "blackwork",
-    "minimalist",
-    "geometric",
-    "dotwork",
-    "old school",
-    "new school",
-    "biomechanical",
-    "portrait",
-    "script",
-    "floral",
-    "animal",
-    "mandala",
-    "abstract",
-    "surrealism",
-  ]
-
-  // Common tattoo subjects
-  const subjects = [
-    "flower",
-    "rose",
-    "lotus",
-    "skull",
-    "dragon",
-    "phoenix",
-    "tiger",
-    "lion",
-    "wolf",
-    "eagle",
-    "snake",
-    "butterfly",
-    "moon",
-    "sun",
-    "star",
-    "tree",
-    "mountain",
-    "ocean",
-    "wave",
-    "compass",
-    "clock",
-    "heart",
-    "cross",
-    "angel",
-    "demon",
-    "samurai",
-    "geisha",
-    "koi",
-  ]
-
-  const keywords = []
-
-  // Check for styles
-  for (const style of styles) {
-    if (lowercasePrompt.includes(style)) {
-      keywords.push(style)
-    }
+  // Check if user is admin
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+  if (!session) {
+    return { error: "Not authenticated" }
   }
 
-  // Check for subjects
-  for (const subject of subjects) {
-    if (lowercasePrompt.includes(subject)) {
-      keywords.push(subject)
-    }
+  const { data: userData, error: userError } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", session.user.id)
+    .single()
+
+  if (userError || !userData || userData.role !== "admin") {
+    return { error: "Unauthorized" }
   }
 
-  // Add any additional words that might be important
-  const words = lowercasePrompt.split(/\s+/)
-  for (const word of words) {
-    const cleaned = word.replace(/[^\w]/g, "")
-    if (cleaned.length > 3 && !keywords.includes(cleaned)) {
-      keywords.push(cleaned)
-    }
+  const { data, error } = await supabase
+    .from("knowledge_base")
+    .insert({
+      title: entry.title,
+      content: entry.content,
+      category: entry.category,
+      tags: entry.tags || [],
+      created_by: session.user.id,
+    })
+    .select()
+
+  if (error) {
+    console.error("Error adding knowledge entry:", error)
+    return { error: error.message }
   }
 
-  return keywords
+  return { data }
+}
+
+export async function searchKnowledgeBase(query: string) {
+  const cookieStore = cookies()
+  const supabase = createClient(cookieStore)
+
+  // Use Supabase's full-text search
+  const { data, error } = await supabase.from("knowledge_base").select("*").textSearch("content", query, {
+    config: "english",
+  })
+
+  if (error) {
+    console.error("Error searching knowledge base:", error)
+    return { error: error.message }
+  }
+
+  return { data }
+}
+
+export async function getKnowledgeCategories() {
+  const cookieStore = cookies()
+  const supabase = createClient(cookieStore)
+
+  const { data, error } = await supabase.from("knowledge_base").select("category").order("category")
+
+  if (error) {
+    console.error("Error fetching knowledge categories:", error)
+    return { error: error.message }
+  }
+
+  // Extract unique categories
+  const categories = [...new Set(data.map((item) => item.category))]
+
+  return { categories }
 }

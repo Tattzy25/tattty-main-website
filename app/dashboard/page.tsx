@@ -58,8 +58,8 @@ export default async function DashboardPage() {
           <DashboardCard
             title="Find Artists"
             description="Connect with tattoo artists near you"
-            icon="search"
-            href="/artists"
+            icon="mapPin"
+            href="/dashboard/find-artists"
           />
           <DashboardCard
             title="Appointments"

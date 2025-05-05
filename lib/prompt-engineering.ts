@@ -1,4 +1,6 @@
 import type { Message } from "ai"
+import { generateText } from "ai"
+import { groq } from "@ai-sdk/groq"
 
 type PromptElements = {
   lifeEvents: string[]
@@ -13,8 +15,78 @@ type PromptElements = {
 
 /**
  * Extracts key elements from a conversation to use in prompt generation
+ * Uses AI to analyze the conversation and extract meaningful elements
  */
-export function extractPromptElements(messages: Message[]): PromptElements {
+export async function extractPromptElements(messages: Message[]): Promise<PromptElements> {
+  try {
+    // Get only user messages
+    const userMessages = messages
+      .filter((m) => m.role === "user")
+      .map((m) => m.content)
+      .join("\n")
+
+    // Use AI to extract elements from the conversation
+    const prompt = `
+      Analyze the following conversation about tattoo design preferences and extract key elements.
+      Return the results as a valid JSON object with the following structure:
+      {
+        "lifeEvents": ["event1", "event2"],
+        "emotions": ["emotion1", "emotion2"],
+        "symbols": ["symbol1", "symbol2"],
+        "style": "preferred style",
+        "colors": ["color1", "color2"],
+        "placement": "body placement",
+        "themes": ["theme1", "theme2"],
+        "personalDetails": ["detail1", "detail2"]
+      }
+      
+      Conversation:
+      ${userMessages}
+    `
+
+    const { text } = await generateText({
+      model: groq("llama3-70b-8192"),
+      prompt,
+      maxTokens: 1000,
+    })
+
+    // Parse the JSON response
+    try {
+      const jsonMatch = text.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) {
+        throw new Error("No JSON found in response")
+      }
+
+      const jsonStr = jsonMatch[0]
+      const elements = JSON.parse(jsonStr) as PromptElements
+
+      // Ensure we have default values for required fields
+      return {
+        lifeEvents: elements.lifeEvents || [],
+        emotions: elements.emotions || [],
+        symbols: elements.symbols || [],
+        style: elements.style || "realistic",
+        colors: elements.colors || [],
+        placement: elements.placement || undefined,
+        themes: elements.themes || [],
+        personalDetails: elements.personalDetails || [],
+      }
+    } catch (parseError) {
+      console.error("Error parsing AI response:", parseError)
+      // Fall back to basic extraction
+      return fallbackExtractPromptElements(messages)
+    }
+  } catch (error) {
+    console.error("Error in AI-based prompt element extraction:", error)
+    // Fall back to basic extraction
+    return fallbackExtractPromptElements(messages)
+  }
+}
+
+/**
+ * Fallback function for extracting prompt elements without AI
+ */
+function fallbackExtractPromptElements(messages: Message[]): PromptElements {
   // Get only user messages
   const userMessages = messages.filter((m) => m.role === "user").map((m) => m.content)
 
@@ -149,16 +221,6 @@ export function extractPromptElements(messages: Message[]): PromptElements {
     minimalist: ["minimalist", "minimal", "simple", "line art", "linework", "fine line"],
     geometric: ["geometric", "geometry", "shapes", "pattern", "sacred geometry"],
     dotwork: ["dotwork", "dot work", "stippling", "pointillism", "dots"],
-    sketch: ["sketch", "sketchy", "drawing", "pencil", "illustrative"],
-    "trash polka": ["trash polka", "abstract", "red and black", "chaotic"],
-    "new school": ["new school", "cartoon", "graffiti", "bold", "colorful"],
-    biomechanical: ["biomechanical", "biomech", "mechanical", "cyborg", "sci-fi"],
-    chicano: ["chicano", "mexican", "latin", "hispanic", "prison"],
-    "fine line": ["fine line", "single needle", "delicate", "thin line", "subtle"],
-    woodcut: ["woodcut", "woodblock", "engraving", "etching", "vintage"],
-    surrealism: ["surreal", "surrealism", "dreamlike", "fantasy", "dali"],
-    ornamental: ["ornamental", "decorative", "filigree", "baroque", "intricate"],
-    cosmic: ["cosmic", "space", "galaxy", "universe", "celestial", "astronomical"],
   }
 
   // Extract life events (look for longer sentences with personal narratives)
@@ -261,6 +323,7 @@ export function extractPromptElements(messages: Message[]): PromptElements {
     "magenta",
     "pastel",
   ]
+
   colorKeywords.forEach((color) => {
     const regex = new RegExp(`\\b${color}\\b`, "i")
     userMessages.forEach((message) => {
@@ -301,6 +364,7 @@ export function extractPromptElements(messages: Message[]): PromptElements {
     "side",
     "underarm",
   ]
+
   placementKeywords.forEach((placement) => {
     const regex = new RegExp(`\\b${placement}\\b`, "i")
     userMessages.forEach((message) => {
@@ -315,8 +379,49 @@ export function extractPromptElements(messages: Message[]): PromptElements {
 
 /**
  * Generates a detailed prompt for tattoo design based on conversation elements
+ * Uses AI to create a high-quality prompt
  */
-export function generateTattooPrompt(elements: PromptElements): string {
+export async function generateTattooPrompt(elements: PromptElements): Promise<string> {
+  try {
+    // Use AI to generate a high-quality prompt
+    const prompt = `
+      Create a detailed prompt for an AI image generator to create a tattoo design.
+      Use these extracted elements from a conversation:
+      
+      Style: ${elements.style}
+      Symbols: ${elements.symbols.join(", ")}
+      Themes: ${elements.themes.join(", ")}
+      Emotions: ${elements.emotions.join(", ")}
+      Life Events: ${elements.lifeEvents.join("; ")}
+      Personal Details: ${elements.personalDetails.join("; ")}
+      Colors: ${elements.colors?.join(", ") || "not specified"}
+      Placement: ${elements.placement || "not specified"}
+      
+      The prompt should be detailed, descriptive, and optimized for generating a high-quality tattoo design.
+      Focus on creating a prompt that will result in a design with clean lines suitable for tattooing,
+      proper contrast that will age well, and a meaningful composition that flows with the body's natural contours.
+      
+      Return only the prompt text with no additional commentary.
+    `
+
+    const { text } = await generateText({
+      model: groq("llama3-70b-8192"),
+      prompt,
+      maxTokens: 500,
+    })
+
+    return text.trim()
+  } catch (error) {
+    console.error("Error in AI-based prompt generation:", error)
+    // Fall back to basic prompt generation
+    return fallbackGenerateTattooPrompt(elements)
+  }
+}
+
+/**
+ * Fallback function for generating a tattoo prompt without AI
+ */
+function fallbackGenerateTattooPrompt(elements: PromptElements): string {
   // Start with style and composition
   let prompt = `A ${elements.style} style tattoo design `
 
@@ -401,17 +506,17 @@ export function generateTattooPrompt(elements: PromptElements): string {
 /**
  * Main function to process a conversation and generate a tattoo design prompt
  */
-export function engineerTattooPrompt(messages: Message[]): string {
-  const elements = extractPromptElements(messages)
-  return generateTattooPrompt(elements)
+export async function engineerTattooPrompt(messages: Message[]): Promise<string> {
+  const elements = await extractPromptElements(messages)
+  return await generateTattooPrompt(elements)
 }
 
 /**
  * Alias for engineerTattooPrompt to maintain backward compatibility
  * Export as both named export and property
  */
-export function getPromptFromConversation(messages: Message[]): string {
-  return engineerTattooPrompt(messages)
+export async function getPromptFromConversation(messages: Message[]): Promise<string> {
+  return await engineerTattooPrompt(messages)
 }
 
 // Add as property on the module exports

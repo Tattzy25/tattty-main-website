@@ -88,6 +88,11 @@ function ArtistDashboardNav() {
       icon: "folder",
     },
     {
+      title: "Location",
+      href: "/artist-dashboard/location",
+      icon: "mapPin",
+    },
+    {
       title: "Appointments",
       href: "/artist-dashboard/appointments",
       icon: "calendar",

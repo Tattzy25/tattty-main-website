@@ -15,6 +15,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Icons } from "@/components/icons"
 import { toast } from "@/components/ui/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { supabase } from "@/lib/supabase"
+import { useRouter } from "next/navigation"
 
 const profileFormSchema = z.object({
   name: z.string().min(2, {
@@ -49,22 +51,92 @@ const securityFormSchema = z
 
 export function AccountSettings() {
   const [isUpdating, setIsUpdating] = useState(false)
+  const [userData, setUserData] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter()
+
+  // Fetch user data on component mount
+  useState(() => {
+    async function fetchUserData() {
+      try {
+        setIsLoading(true)
+
+        // Get current user
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+
+        if (!user) {
+          router.push("/auth/login")
+          return
+        }
+
+        // Get user profile
+        const { data: profile, error } = await supabase.from("user_profiles").select("*").eq("id", user.id).single()
+
+        if (error && error.code !== "PGRST116") {
+          throw error
+        }
+
+        // Get notification preferences
+        const { data: preferences, error: prefError } = await supabase
+          .from("user_preferences")
+          .select("*")
+          .eq("user_id", user.id)
+          .single()
+
+        setUserData({
+          id: user.id,
+          email: user.email,
+          name: profile?.display_name || user.user_metadata?.name || "",
+          bio: profile?.bio || "",
+          avatar_url: profile?.avatar_url || "",
+          preferences: preferences || {
+            marketing_emails: false,
+            design_updates: true,
+            new_features: true,
+          },
+        })
+      } catch (error) {
+        console.error("Error fetching user data:", error)
+        toast({
+          title: "Error",
+          description: "Failed to load your profile data. Please try again.",
+          variant: "destructive",
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchUserData()
+  })
 
   const profileForm = useForm<z.infer<typeof profileFormSchema>>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
-      name: "John Doe",
-      email: "john.doe@example.com",
-      bio: "Tattoo enthusiast and designer.",
+      name: userData?.name || "",
+      email: userData?.email || "",
+      bio: userData?.bio || "",
+    },
+    values: {
+      name: userData?.name || "",
+      email: userData?.email || "",
+      bio: userData?.bio || "",
     },
   })
 
   const notificationsForm = useForm<z.infer<typeof notificationsFormSchema>>({
     resolver: zodResolver(notificationsFormSchema),
     defaultValues: {
-      marketingEmails: false,
-      designUpdates: true,
-      newFeatures: true,
+      marketingEmails: userData?.preferences?.marketing_emails || false,
+      designUpdates: userData?.preferences?.design_updates || true,
+      newFeatures: userData?.preferences?.new_features || true,
+    },
+    values: {
+      marketingEmails: userData?.preferences?.marketing_emails || false,
+      designUpdates: userData?.preferences?.design_updates || true,
+      newFeatures: userData?.preferences?.new_features || true,
     },
   })
 
@@ -77,45 +149,191 @@ export function AccountSettings() {
     },
   })
 
-  function onProfileSubmit(values: z.infer<typeof profileFormSchema>) {
+  async function onProfileSubmit(values: z.infer<typeof profileFormSchema>) {
     setIsUpdating(true)
-    setTimeout(() => {
-      console.log(values)
+    try {
+      // Update user profile in Supabase
+      const { error: profileError } = await supabase.from("user_profiles").upsert({
+        id: userData.id,
+        display_name: values.name,
+        bio: values.bio,
+        updated_at: new Date().toISOString(),
+      })
+
+      if (profileError) throw profileError
+
+      // Update email if changed
+      if (values.email !== userData.email) {
+        const { error: emailError } = await supabase.auth.updateUser({
+          email: values.email,
+        })
+
+        if (emailError) throw emailError
+      }
+
+      // Update local state
+      setUserData({
+        ...userData,
+        name: values.name,
+        email: values.email,
+        bio: values.bio,
+      })
+
       toast({
         title: "Profile updated",
         description: "Your profile has been updated successfully.",
       })
+    } catch (error) {
+      console.error("Error updating profile:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update your profile. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
       setIsUpdating(false)
-    }, 1000)
+    }
   }
 
-  function onNotificationsSubmit(values: z.infer<typeof notificationsFormSchema>) {
+  async function onNotificationsSubmit(values: z.infer<typeof notificationsFormSchema>) {
     setIsUpdating(true)
-    setTimeout(() => {
-      console.log(values)
+    try {
+      // Update notification preferences in Supabase
+      const { error } = await supabase.from("user_preferences").upsert({
+        user_id: userData.id,
+        marketing_emails: values.marketingEmails,
+        design_updates: values.designUpdates,
+        new_features: values.newFeatures,
+        updated_at: new Date().toISOString(),
+      })
+
+      if (error) throw error
+
+      // Update local state
+      setUserData({
+        ...userData,
+        preferences: {
+          marketing_emails: values.marketingEmails,
+          design_updates: values.designUpdates,
+          new_features: values.newFeatures,
+        },
+      })
+
       toast({
         title: "Notification preferences updated",
         description: "Your notification preferences have been updated successfully.",
       })
+    } catch (error) {
+      console.error("Error updating notification preferences:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update your notification preferences. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
       setIsUpdating(false)
-    }, 1000)
+    }
   }
 
-  function onSecuritySubmit(values: z.infer<typeof securityFormSchema>) {
+  async function onSecuritySubmit(values: z.infer<typeof securityFormSchema>) {
     setIsUpdating(true)
-    setTimeout(() => {
-      console.log(values)
+    try {
+      // First verify current password
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: userData.email,
+        password: values.currentPassword,
+      })
+
+      if (signInError) {
+        toast({
+          title: "Error",
+          description: "Current password is incorrect.",
+          variant: "destructive",
+        })
+        return
+      }
+
+      // Update password
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: values.newPassword,
+      })
+
+      if (updateError) throw updateError
+
       toast({
         title: "Password updated",
         description: "Your password has been updated successfully.",
       })
+
       securityForm.reset({
         currentPassword: "",
         newPassword: "",
         confirmPassword: "",
       })
+    } catch (error) {
+      console.error("Error updating password:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update your password. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
       setIsUpdating(false)
-    }, 1000)
+    }
+  }
+
+  async function handleAvatarUpload(file: File) {
+    try {
+      setIsUpdating(true)
+
+      // Upload avatar to storage
+      const fileExt = file.name.split(".").pop()
+      const fileName = `${userData.id}-${Math.random().toString(36).substring(2)}.${fileExt}`
+      const filePath = `avatars/${fileName}`
+
+      const { error: uploadError } = await supabase.storage.from("user-content").upload(filePath, file)
+
+      if (uploadError) throw uploadError
+
+      // Get public URL
+      const { data: publicUrl } = supabase.storage.from("user-content").getPublicUrl(filePath)
+
+      // Update profile with new avatar URL
+      const { error: updateError } = await supabase
+        .from("user_profiles")
+        .update({ avatar_url: publicUrl.publicUrl })
+        .eq("id", userData.id)
+
+      if (updateError) throw updateError
+
+      // Update local state
+      setUserData({
+        ...userData,
+        avatar_url: publicUrl.publicUrl,
+      })
+
+      toast({
+        title: "Avatar updated",
+        description: "Your profile picture has been updated successfully.",
+      })
+    } catch (error) {
+      console.error("Error uploading avatar:", error)
+      toast({
+        title: "Error",
+        description: "Failed to upload your profile picture. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-[400px]">
+        <Icons.spinner className="h-8 w-8 animate-spin text-gold-500" />
+      </div>
+    )
   }
 
   return (
@@ -135,13 +353,42 @@ export function AccountSettings() {
           <CardContent>
             <div className="flex items-center gap-6 mb-8">
               <Avatar className="h-20 w-20">
-                <AvatarImage src="/placeholder.svg?height=80&width=80" alt="User" />
-                <AvatarFallback className="bg-gold-500/20 text-gold-500 text-xl">JD</AvatarFallback>
+                <AvatarImage
+                  src={userData?.avatar_url || "/placeholder.svg?height=80&width=80"}
+                  alt={userData?.name || "User"}
+                />
+                <AvatarFallback className="bg-gold-500/20 text-gold-500 text-xl">
+                  {userData?.name?.charAt(0) || "U"}
+                </AvatarFallback>
               </Avatar>
               <div>
-                <Button variant="outline" className="border-gold-500/30 hover:bg-gold-500/10">
-                  <Icons.upload className="mr-2 h-4 w-4" />
-                  Change Avatar
+                <input
+                  type="file"
+                  id="avatar-upload"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) handleAvatarUpload(file)
+                  }}
+                />
+                <Button
+                  variant="outline"
+                  className="border-gold-500/30 hover:bg-gold-500/10"
+                  onClick={() => document.getElementById("avatar-upload")?.click()}
+                  disabled={isUpdating}
+                >
+                  {isUpdating ? (
+                    <>
+                      <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Icons.upload className="mr-2 h-4 w-4" />
+                      Change Avatar
+                    </>
+                  )}
                 </Button>
               </div>
             </div>

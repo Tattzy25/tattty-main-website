@@ -1,20 +1,9 @@
-// This is a placeholder for the MailerLite integration
-// Will be implemented based on future instructions
+const MAILERLITE_API_KEY = process.env.MAILERLITE_API_KEY
 
 export async function subscribeToNewsletter(email: string, name?: string) {
-  // Placeholder for MailerLite subscription
-  console.log(`Subscribing ${email} to newsletter`)
-  return {
-    success: true,
-    message: "Subscription successful",
+  if (!MAILERLITE_API_KEY) {
+    throw new Error('MailerLite API key is not configured')
   }
-}
-
-export async function sendTransactionalEmail(email: string, templateId: string, variables: Record<string, any>) {
-  // Placeholder for MailerLite transactional email
-  console.log(`Sending email to ${email} with template ${templateId}`)
-  return {
-    success: true,
-    message: "Email sent successfully",
-  }
-}
+  
+  try {\
+    const response = await fetch('https://connect.mailerlite.com/api/subscribers

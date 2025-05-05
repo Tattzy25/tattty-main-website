@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -8,6 +8,8 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Icons } from "@/components/icons"
 import { formatDate } from "@/lib/utils"
+import { supabase } from "@/lib/supabase"
+import { toast } from "@/components/ui/use-toast"
 
 interface Design {
   id: string
@@ -19,11 +21,62 @@ interface Design {
 }
 
 interface DesignHistoryProps {
-  designs: Design[]
+  initialDesigns?: Design[]
 }
 
-export function DesignHistory({ designs }: DesignHistoryProps) {
+export function DesignHistory({ initialDesigns = [] }: DesignHistoryProps) {
+  const [designs, setDesigns] = useState<Design[]>(initialDesigns)
   const [selectedDesign, setSelectedDesign] = useState<Design | null>(null)
+  const [loading, setLoading] = useState(initialDesigns.length === 0)
+
+  useEffect(() => {
+    if (initialDesigns.length === 0) {
+      fetchDesigns()
+    }
+  }, [initialDesigns.length])
+
+  const fetchDesigns = async () => {
+    try {
+      setLoading(true)
+
+      // Get current user
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (!user) {
+        throw new Error("User not authenticated")
+      }
+
+      // Get designs from database
+      const { data, error } = await supabase
+        .from("tattoo_designs")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+
+      if (error) throw error
+
+      setDesigns(data || [])
+    } catch (error) {
+      console.error("Error fetching designs:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load your design history. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[200px]">
+        <Icons.spinner className="h-8 w-8 animate-spin text-gold-500" />
+      </div>
+    )
+  }
 
   if (designs.length === 0) {
     return (
@@ -113,7 +166,36 @@ export function DesignHistory({ designs }: DesignHistoryProps) {
               </div>
             </div>
             <div className="flex justify-between">
-              <Button variant="outline" className="border-gold-500/30 hover:bg-gold-500/10">
+              <Button
+                variant="outline"
+                className="border-gold-500/30 hover:bg-gold-500/10"
+                onClick={async () => {
+                  try {
+                    const response = await fetch(selectedDesign.image_url)
+                    const blob = await response.blob()
+                    const url = window.URL.createObjectURL(blob)
+                    const a = document.createElement("a")
+                    a.href = url
+                    a.download = `${selectedDesign.title || "tattoo-design"}.png`
+                    document.body.appendChild(a)
+                    a.click()
+                    window.URL.revokeObjectURL(url)
+                    document.body.removeChild(a)
+
+                    toast({
+                      title: "Success",
+                      description: "Design downloaded successfully",
+                    })
+                  } catch (error) {
+                    console.error("Error downloading design:", error)
+                    toast({
+                      title: "Error",
+                      description: "Failed to download design",
+                      variant: "destructive",
+                    })
+                  }
+                }}
+              >
                 <Icons.download className="mr-2 h-4 w-4" />
                 Download
               </Button>

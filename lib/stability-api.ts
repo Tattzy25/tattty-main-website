@@ -1,4 +1,5 @@
 import { STABILITY_API_KEY } from "@/lib/config"
+import { createBlob } from "@/lib/blob-storage"
 
 interface StabilityResponse {
   artifacts: Array<{
@@ -43,16 +44,70 @@ export async function generateTattooDesign(prompt: string, references: string[] 
     })
 
     if (!response.ok) {
-      throw new Error(`Stability API error: ${response.statusText}`)
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(`Stability API error: ${response.statusText} - ${JSON.stringify(errorData)}`)
     }
 
     const data: StabilityResponse = await response.json()
 
-    // Convert the base64 image to a data URL
+    if (!data.artifacts || data.artifacts.length === 0) {
+      throw new Error("No images were generated")
+    }
+
+    // Convert the base64 image to a buffer
     const imageBase64 = data.artifacts[0].base64
-    return `data:image/png;base64,${imageBase64}`
+    const buffer = Buffer.from(imageBase64, "base64")
+
+    // Upload to Vercel Blob
+    const blob = await createBlob(buffer, {
+      contentType: "image/png",
+      filename: `tattoo-design-${Date.now()}.png`,
+    })
+
+    // Return the blob URL
+    return blob.url
   } catch (error) {
     console.error("Error generating tattoo design:", error)
+    throw error
+  }
+}
+
+// Generate multiple design variations
+export async function generateDesignVariations(
+  prompt: string,
+  count = 3,
+  references: string[] = [],
+): Promise<string[]> {
+  try {
+    const urls: string[] = []
+
+    // Generate multiple designs in parallel
+    const promises = Array(count)
+      .fill(0)
+      .map(() => generateTattooDesign(prompt, references))
+    const results = await Promise.allSettled(promises)
+
+    // Filter successful results
+    results.forEach((result) => {
+      if (result.status === "fulfilled") {
+        urls.push(result.value)
+      }
+    })
+
+    return urls
+  } catch (error) {
+    console.error("Error generating design variations:", error)
+    throw error
+  }
+}
+
+// Generate design with a specific style
+export async function generateStyledDesign(prompt: string, style: string): Promise<string> {
+  try {
+    const styledPrompt = `${style} style tattoo design of ${prompt}`
+    return await generateTattooDesign(styledPrompt)
+  } catch (error) {
+    console.error(`Error generating ${style} style design:`, error)
     throw error
   }
 }

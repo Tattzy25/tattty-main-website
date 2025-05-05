@@ -10,8 +10,9 @@ import { generateImage } from "@/lib/stability"
 import { TattooStyleSelector } from "@/components/tattoo-generator/tattoo-style-selector"
 import { TattooResult } from "@/components/tattoo-generator/tattoo-result"
 import { PromptEngineer } from "@/components/tattoo-generator/prompt-engineer"
-// Import ChatMessage directly from the file
 import { ChatMessage } from "@/components/tattoo-generator/chat-components"
+import { supabase } from "@/lib/supabase"
+import { toast } from "@/components/ui/use-toast"
 
 export default function TattooGenerator() {
   const [step, setStep] = useState(0)
@@ -19,7 +20,20 @@ export default function TattooGenerator() {
   const [generating, setGenerating] = useState(false)
   const [selectedStyle, setSelectedStyle] = useState("")
   const [imagePrompt, setImagePrompt] = useState("")
+  const [userId, setUserId] = useState<string | null>(null)
   const chatContainerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    // Check if user is logged in
+    const checkUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      setUserId(user?.id || null)
+    }
+
+    checkUser()
+  }, [])
 
   const { messages, input, handleInputChange, handleSubmit, append, isLoading, reload } = useChat({
     api: "/api/chat",
@@ -31,9 +45,11 @@ export default function TattooGenerator() {
           "Hi, I'm Tattty! I'll help you create a meaningful tattoo design based on your life story. Ready to start our journey together?",
       },
     ],
+    body: {
+      userId: userId, // Pass userId to the API for storing chat history
+    },
     onFinish: async (message) => {
       if (step === 3) {
-        // We'll now use the prompt engineer instead of extracting from AI response
         setStep(4)
       }
     },
@@ -98,8 +114,6 @@ export default function TattooGenerator() {
         content:
           "Thank you for all your input. I'll now craft a detailed prompt based on your story and style preference to generate your personalized tattoo design.",
       })
-
-      // We'll now use the prompt engineer component instead of sending another message
     }, 500)
   }
 
@@ -116,8 +130,30 @@ export default function TattooGenerator() {
     try {
       const imageUrl = await generateImage(imagePrompt, selectedStyle)
       setGeneratedImage(imageUrl)
+
+      // Save the generated design to the database if user is logged in
+      if (userId) {
+        const { error } = await supabase.from("tattoo_designs").insert({
+          user_id: userId,
+          title: `${selectedStyle} Tattoo Design`,
+          description: "Generated with Tattty AI assistant",
+          prompt: imagePrompt,
+          style: selectedStyle,
+          image_url: imageUrl,
+          created_at: new Date().toISOString(),
+        })
+
+        if (error) {
+          console.error("Error saving design to database:", error)
+        }
+      }
     } catch (error) {
       console.error("Error generating image:", error)
+      toast({
+        title: "Generation failed",
+        description: "Failed to generate your tattoo design. Please try again.",
+        variant: "destructive",
+      })
     } finally {
       setGenerating(false)
     }
@@ -232,7 +268,7 @@ export default function TattooGenerator() {
                     </Button>
                   </div>
                 ) : (
-                  <TattooResult imageUrl={generatedImage} prompt={imagePrompt} style={selectedStyle} />
+                  <TattooResult imageUrl={generatedImage} prompt={imagePrompt} style={selectedStyle} userId={userId} />
                 )}
 
                 <div className="mt-6 flex justify-center">
