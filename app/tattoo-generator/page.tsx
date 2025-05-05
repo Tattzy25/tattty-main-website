@@ -10,6 +10,7 @@ import { generateImage } from "@/lib/stability"
 import { TattooStyleSelector } from "@/components/tattoo-generator/tattoo-style-selector"
 import { TattooResult } from "@/components/tattoo-generator/tattoo-result"
 import { PromptEngineer } from "@/components/tattoo-generator/prompt-engineer"
+// Import ChatMessage directly from the file
 import { ChatMessage } from "@/components/tattoo-generator/chat-components"
 
 export default function TattooGenerator() {

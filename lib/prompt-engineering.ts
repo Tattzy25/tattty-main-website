@@ -408,7 +408,14 @@ export function engineerTattooPrompt(messages: Message[]): string {
 
 /**
  * Alias for engineerTattooPrompt to maintain backward compatibility
+ * Export as both named export and property
  */
 export function getPromptFromConversation(messages: Message[]): string {
   return engineerTattooPrompt(messages)
 }
+
+// Add as property on the module exports
+export const getPromptFromConversation2 = getPromptFromConversation
+
+// Default export as well
+export default getPromptFromConversation

@@ -6,9 +6,8 @@ import { useState, useRef, useEffect } from "react"
 import { User, Bot } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-export { ChatMessage, ChatInput }
-
-interface ChatMessageProps {
+// Export directly as named export AND as default
+export interface ChatMessageProps {
   message: {
     role: "user" | "assistant" | "system"
     content: string
@@ -92,3 +91,7 @@ export function ChatInput({ className, onSend, ...props }: ChatInputProps) {
     </div>
   )
 }
+
+// Add default export as well to cover all import scenarios
+const ChatComponents = { ChatMessage, ChatInput }
+export default ChatComponents

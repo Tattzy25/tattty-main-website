@@ -96,9 +96,16 @@ export function generateSpecializedTattooPrompt(input: {
 
 /**
  * Enhances a basic prompt with additional details and styling
+ * Export as both named export and property
  */
 export async function enhancePrompt(basePrompt: string): Promise<string> {
   // This is a simplified version that just returns the base prompt
   // In a real implementation, this might call an AI service to enhance the prompt
   return basePrompt
 }
+
+// Add as property on the module exports
+export const enhancePromptFn = enhancePrompt
+
+// Default export as well
+export default enhancePrompt
