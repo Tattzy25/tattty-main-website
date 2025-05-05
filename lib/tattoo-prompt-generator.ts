@@ -93,3 +93,12 @@ export function generateSpecializedTattooPrompt(input: {
 
   return prompt
 }
+
+/**
+ * Enhances a basic prompt with additional details and styling
+ */
+export async function enhancePrompt(basePrompt: string): Promise<string> {
+  // This is a simplified version that just returns the base prompt
+  // In a real implementation, this might call an AI service to enhance the prompt
+  return basePrompt
+}

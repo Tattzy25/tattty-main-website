@@ -67,12 +67,12 @@
     "wicg-inert": "latest",
     "@supabase/auth-helpers-nextjs": "latest",
     "@vercel/analytics": "latest",
+    "@ai-sdk/groq": "latest",
     "ai": "latest",
     "@vercel/blob": "latest",
     "nanoid": "latest",
     "uuid": "latest",
-    "@ai-sdk/openai": "latest",
-    "@ai-sdk/groq": "latest"
+    "@supabase/ssr": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",

@@ -3,129 +3,92 @@
 import type React from "react"
 
 import { useState, useRef, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Icons } from "@/components/icons"
+import { User, Bot } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { QuickReply } from "./quick-reply"
-import { TattooStyleSelector } from "./tattoo-style-selector"
 
-type Message = {
-  role: "user" | "assistant"
-  content: string
+export { ChatMessage, ChatInput }
+
+interface ChatMessageProps {
+  message: {
+    role: "user" | "assistant" | "system"
+    content: string
+    id?: string
+  }
+  isLoading?: boolean
 }
 
-export function ChatInterface() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "assistant",
-      content:
-        "Hi there! I'm your tattoo design assistant. Tell me what kind of tattoo you're looking for, and I'll help you create the perfect design.",
-    },
-  ])
-  const [input, setInput] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [selectedStyle, setSelectedStyle] = useState<string | null>(null)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!input.trim()) return
-
-    // Add user message
-    const userMessage = { role: "user" as const, content: input }
-    setMessages((prev) => [...prev, userMessage])
-    setInput("")
-    setIsLoading(true)
-
-    try {
-      // Send message to API
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: [...messages, userMessage],
-          model: "openai",
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to get response")
-      }
-
-      const data = await response.text()
-
-      // Add assistant message
-      setMessages((prev) => [...prev, { role: "assistant", content: data }])
-    } catch (error) {
-      console.error("Error:", error)
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: "Sorry, I encountered an error. Please try again." },
-      ])
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleQuickReply = (reply: string) => {
-    setInput(reply)
-  }
+export function ChatMessage({ message, isLoading }: ChatMessageProps) {
+  const [showFullMessage, setShowFullMessage] = useState(false)
+  const isLongMessage = message.content.length > 300
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message, index) => (
-          <div
-            key={index}
-            className={cn(
-              "flex flex-col max-w-[80%] rounded-lg p-4",
-              message.role === "user" ? "ml-auto bg-amber-500 text-black" : "bg-zinc-800 text-white",
-            )}
-          >
-            <p className="whitespace-pre-wrap">{message.content}</p>
+    <div
+      className={cn(
+        "flex items-start gap-3 rounded-lg p-3",
+        message.role === "user"
+          ? "bg-gradient-to-r from-red-500/20 to-amber-500/20 border border-red-500/30 ml-auto max-w-[85%]"
+          : "bg-zinc-800/80 border border-zinc-700 mr-auto max-w-[85%]",
+      )}
+    >
+      <div className="flex-shrink-0 mt-1">
+        {message.role === "user" ? (
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-red-500 to-amber-500">
+            <User className="h-5 w-5 text-white" />
           </div>
-        ))}
-        {isLoading && (
-          <div className="flex flex-col max-w-[80%] rounded-lg p-4 bg-zinc-800 text-white">
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 rounded-full bg-zinc-400 animate-pulse"></div>
-              <div className="w-2 h-2 rounded-full bg-zinc-400 animate-pulse delay-150"></div>
-              <div className="w-2 h-2 rounded-full bg-zinc-400 animate-pulse delay-300"></div>
-            </div>
+        ) : (
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-700">
+            <Bot className="h-5 w-5 text-white" />
           </div>
         )}
-        <div ref={messagesEndRef} />
       </div>
-
-      <div className="p-4 border-t border-zinc-700">
-        <TattooStyleSelector onSelect={setSelectedStyle} selected={selectedStyle} />
-
-        <QuickReply onSelect={handleQuickReply} />
-
-        <form onSubmit={handleSubmit} className="flex items-end space-x-2">
-          <Textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Describe your tattoo idea..."
-            className="flex-1 bg-zinc-800 border-zinc-700 text-white resize-none"
-            rows={3}
-          />
-          <Button
-            type="submit"
-            disabled={isLoading || !input.trim()}
-            className="bg-amber-500 hover:bg-amber-600 text-black"
-          >
-            <Icons.send className="h-4 w-4" />
-            <span className="sr-only">Send</span>
-          </Button>
-        </form>
+      <div className="flex-1 space-y-2">
+        <div className="prose prose-invert max-w-none">
+          {isLongMessage && !showFullMessage ? (
+            <>
+              <p>{message.content.substring(0, 300)}...</p>
+              <button
+                onClick={() => setShowFullMessage(true)}
+                className="text-amber-400 hover:text-amber-300 text-sm font-medium"
+              >
+                Read more
+              </button>
+            </>
+          ) : (
+            <p>{message.content}</p>
+          )}
+        </div>
+        {isLoading && (
+          <div className="flex space-x-1 mt-2">
+            <div className="h-2 w-2 rounded-full bg-zinc-400 animate-bounce" style={{ animationDelay: "0ms" }} />
+            <div className="h-2 w-2 rounded-full bg-zinc-400 animate-bounce" style={{ animationDelay: "150ms" }} />
+            <div className="h-2 w-2 rounded-full bg-zinc-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+          </div>
+        )}
       </div>
+    </div>
+  )
+}
+
+interface ChatInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  onSend?: () => void
+}
+
+export function ChatInput({ className, onSend, ...props }: ChatInputProps) {
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus()
+    }
+  }, [])
+
+  return (
+    <div className={cn("relative flex-1", className)}>
+      <input
+        ref={inputRef}
+        className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-4 py-2 text-white placeholder-zinc-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+        {...props}
+      />
     </div>
   )
 }

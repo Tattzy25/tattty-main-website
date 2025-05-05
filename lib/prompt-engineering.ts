@@ -405,3 +405,10 @@ export function engineerTattooPrompt(messages: Message[]): string {
   const elements = extractPromptElements(messages)
   return generateTattooPrompt(elements)
 }
+
+/**
+ * Alias for engineerTattooPrompt to maintain backward compatibility
+ */
+export function getPromptFromConversation(messages: Message[]): string {
+  return engineerTattooPrompt(messages)
+}

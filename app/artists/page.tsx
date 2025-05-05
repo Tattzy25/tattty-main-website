@@ -16,48 +16,30 @@ export const metadata: Metadata = {
 
 export default async function ArtistsPage() {
   // Fetch featured artists
-  let featuredArtists = []
-  try {
-    const { data, error } = await supabase
-      .from("artist_profiles")
-      .select("*, artist_portfolios(*)")
-      .eq("is_verified", true)
-      .order("created_at", { ascending: false })
-      .limit(8)
-
-    if (error) {
-      console.error("Error fetching artists:", error)
-    } else {
-      featuredArtists = data || []
-    }
-  } catch (error) {
-    console.error("Error fetching artists:", error)
-  }
+  const { data: featuredArtists } = await supabase
+    .from("artist_profiles")
+    .select("*, artist_portfolios(*)")
+    .eq("is_verified", true)
+    .order("created_at", { ascending: false })
+    .limit(8)
+    .catch(() => ({ data: [] }))
 
   // Fetch artist of the month
-  let artistOfMonth = null
-  try {
-    const now = new Date()
-    const month = now.getMonth() + 1
-    const year = now.getFullYear()
+  const now = new Date()
+  const month = now.getMonth() + 1
+  const year = now.getFullYear()
 
-    const { data, error } = await supabase
-      .from("artist_of_the_month")
-      .select(`
-        *,
-        artist_profiles(*),
-        artist_portfolios(*)
-      `)
-      .eq("month", month)
-      .eq("year", year)
-      .single()
-
-    if (!error) {
-      artistOfMonth = data
-    }
-  } catch (error) {
-    console.error("Error fetching artist of the month:", error)
-  }
+  const { data: artistOfMonth } = await supabase
+    .from("artist_of_the_month")
+    .select(`
+      *,
+      artist_profiles(*),
+      artist_portfolios(*)
+    `)
+    .eq("month", month)
+    .eq("year", year)
+    .single()
+    .catch(() => ({ data: null }))
 
   return (
     <MainLayout>
@@ -128,8 +110,7 @@ export default async function ArtistsPage() {
                     <Image
                       src={
                         artistOfMonth.artist_portfolios?.image_url ||
-                        "/placeholder.svg?height=600&width=600&query=tattoo+artist" ||
-                        "/placeholder.svg"
+                        "/placeholder.svg?height=600&width=600&query=tattoo+artist"
                       }
                       alt={artistOfMonth.artist_profiles?.business_name || "Artist of the Month"}
                       fill
@@ -198,9 +179,7 @@ export default async function ArtistsPage() {
 
               <TabsContent value="all" className="mt-0">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {featuredArtists.length > 0 ? (
-                    featuredArtists.map((artist) => <ArtistCard key={artist.id} artist={artist} />)
-                  ) : (
+                  {featuredArtists?.map((artist) => <ArtistCard key={artist.id} artist={artist} />) || (
                     <>
                       <ArtistCardPlaceholder />
                       <ArtistCardPlaceholder />
@@ -213,11 +192,9 @@ export default async function ArtistsPage() {
 
               <TabsContent value="traditional" className="mt-0">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {featuredArtists.filter((artist) => artist.specialties?.includes("Traditional")).length > 0 ? (
-                    featuredArtists
-                      .filter((artist) => artist.specialties?.includes("Traditional"))
-                      .map((artist) => <ArtistCard key={artist.id} artist={artist} />)
-                  ) : (
+                  {featuredArtists
+                    ?.filter((artist) => artist.specialties?.includes("Traditional"))
+                    .map((artist) => <ArtistCard key={artist.id} artist={artist} />) || (
                     <>
                       <ArtistCardPlaceholder />
                       <ArtistCardPlaceholder />
@@ -229,11 +206,9 @@ export default async function ArtistsPage() {
               {/* Other tabs content */}
               <TabsContent value="japanese" className="mt-0">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {featuredArtists.filter((artist) => artist.specialties?.includes("Japanese")).length > 0 ? (
-                    featuredArtists
-                      .filter((artist) => artist.specialties?.includes("Japanese"))
-                      .map((artist) => <ArtistCard key={artist.id} artist={artist} />)
-                  ) : (
+                  {featuredArtists
+                    ?.filter((artist) => artist.specialties?.includes("Japanese"))
+                    .map((artist) => <ArtistCard key={artist.id} artist={artist} />) || (
                     <>
                       <ArtistCardPlaceholder />
                       <ArtistCardPlaceholder />
@@ -244,11 +219,9 @@ export default async function ArtistsPage() {
 
               <TabsContent value="blackwork" className="mt-0">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {featuredArtists.filter((artist) => artist.specialties?.includes("Blackwork")).length > 0 ? (
-                    featuredArtists
-                      .filter((artist) => artist.specialties?.includes("Blackwork"))
-                      .map((artist) => <ArtistCard key={artist.id} artist={artist} />)
-                  ) : (
+                  {featuredArtists
+                    ?.filter((artist) => artist.specialties?.includes("Blackwork"))
+                    .map((artist) => <ArtistCard key={artist.id} artist={artist} />) || (
                     <>
                       <ArtistCardPlaceholder />
                       <ArtistCardPlaceholder />
@@ -259,11 +232,9 @@ export default async function ArtistsPage() {
 
               <TabsContent value="realism" className="mt-0">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {featuredArtists.filter((artist) => artist.specialties?.includes("Realism")).length > 0 ? (
-                    featuredArtists
-                      .filter((artist) => artist.specialties?.includes("Realism"))
-                      .map((artist) => <ArtistCard key={artist.id} artist={artist} />)
-                  ) : (
+                  {featuredArtists
+                    ?.filter((artist) => artist.specialties?.includes("Realism"))
+                    .map((artist) => <ArtistCard key={artist.id} artist={artist} />) || (
                     <>
                       <ArtistCardPlaceholder />
                       <ArtistCardPlaceholder />
@@ -294,7 +265,7 @@ export default async function ArtistsPage() {
 
 function ArtistCard({ artist }: { artist: any }) {
   // Get the first portfolio image or use a placeholder
-  const portfolioImage = artist.artist_portfolios?.[0]?.image_url || "/placeholder.svg?key=5bah0"
+  const portfolioImage = artist.artist_portfolios?.[0]?.image_url || "/placeholder.svg?key=t2aok"
 
   return (
     <Card className="overflow-hidden border-zinc-800 bg-zinc-900/50 backdrop-blur-sm group">
