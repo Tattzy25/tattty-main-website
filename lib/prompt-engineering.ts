@@ -101,6 +101,16 @@ function fallbackExtractPromptElements(messages: Message[]): PromptElements {
     personalDetails: [],
   }
 
+  // Extract style from messages
+  const styleRegex = /I'd like my tattoo in (\w+(?:-\w+)*) style/i
+  for (const message of userMessages) {
+    const match = message.match(styleRegex)
+    if (match && match[1]) {
+      elements.style = match[1].toLowerCase()
+      break
+    }
+  }
+
   // Common emotions to detect
   const emotionKeywords = [
     "happy",
@@ -209,20 +219,6 @@ function fallbackExtractPromptElements(messages: Message[]): PromptElements {
     "fatherhood",
   ]
 
-  // Tattoo styles to detect
-  const styleKeywords: Record<string, string[]> = {
-    traditional: ["traditional", "old school", "americana", "classic", "sailor jerry"],
-    "neo-traditional": ["neo-traditional", "neo traditional", "new traditional"],
-    realism: ["realism", "realistic", "photorealistic", "portrait", "hyperrealism"],
-    watercolor: ["watercolor", "watercolour", "painterly", "abstract", "fluid"],
-    tribal: ["tribal", "polynesian", "maori", "hawaiian", "samoan", "indigenous"],
-    japanese: ["japanese", "irezumi", "oriental", "yakuza", "asian"],
-    blackwork: ["blackwork", "black work", "solid black", "black ink", "negative space"],
-    minimalist: ["minimalist", "minimal", "simple", "line art", "linework", "fine line"],
-    geometric: ["geometric", "geometry", "shapes", "pattern", "sacred geometry"],
-    dotwork: ["dotwork", "dot work", "stippling", "pointillism", "dots"],
-  }
-
   // Extract life events (look for longer sentences with personal narratives)
   userMessages.forEach((message) => {
     const sentences = message.split(/[.!?]+/).filter((s) => s.trim().length > 0)
@@ -278,18 +274,6 @@ function fallbackExtractPromptElements(messages: Message[]): PromptElements {
       }
     })
   })
-
-  // Extract style preference
-  for (const [style, keywords] of Object.entries(styleKeywords)) {
-    for (const keyword of keywords) {
-      const regex = new RegExp(`\\b${keyword}\\b`, "i")
-      const found = userMessages.some((message) => regex.test(message))
-      if (found) {
-        elements.style = style
-        break
-      }
-    }
-  }
 
   // Extract color preferences
   const colorKeywords = [

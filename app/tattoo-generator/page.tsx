@@ -9,48 +9,105 @@ import MainLayout from "@/components/main-layout"
 import { generateImage } from "@/lib/stability"
 import { TattooStyleSelector } from "@/components/tattoo-generator/tattoo-style-selector"
 import { TattooResult } from "@/components/tattoo-generator/tattoo-result"
-import { PromptEngineer } from "@/components/tattoo-generator/prompt-engineer"
 import { ChatMessage } from "@/components/tattoo-generator/chat-components"
 import { supabase } from "@/lib/supabase"
 import { toast } from "@/components/ui/use-toast"
+import { engineerTattooPrompt } from "@/lib/prompt-engineering"
 
 export default function TattooGenerator() {
-  const [step, setStep] = useState(0)
   const [generatedImage, setGeneratedImage] = useState<string | null>(null)
   const [generating, setGenerating] = useState(false)
   const [selectedStyle, setSelectedStyle] = useState("")
   const [imagePrompt, setImagePrompt] = useState("")
   const [userId, setUserId] = useState<string | null>(null)
+  const [showStyleSelector, setShowStyleSelector] = useState(false)
+  const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false)
+  const [chatHistory, setChatHistory] = useState<any[]>([])
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true)
   const chatContainerRef = useRef<HTMLDivElement>(null)
 
+  // Check if user is logged in
   useEffect(() => {
-    // Check if user is logged in
     const checkUser = async () => {
       const {
         data: { user },
       } = await supabase.auth.getUser()
       setUserId(user?.id || null)
+
+      if (user?.id) {
+        fetchChatHistory(user.id)
+      } else {
+        setIsLoadingHistory(false)
+      }
     }
 
     checkUser()
   }, [])
 
+  // Fetch chat history from the database
+  const fetchChatHistory = async (userId: string) => {
+    try {
+      setIsLoadingHistory(true)
+      const response = await fetch(`/api/chat?userId=${userId}`)
+      const data = await response.json()
+
+      if (data.messages && Array.isArray(data.messages)) {
+        setChatHistory(data.messages)
+
+        // Convert to the format expected by useChat
+        const formattedMessages = data.messages.map((msg: any) => ({
+          id: msg.id,
+          role: msg.role,
+          content: msg.content,
+        }))
+
+        // Set initial messages if we have history
+        if (formattedMessages.length > 0) {
+          setInitialMessages(formattedMessages)
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching chat history:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load chat history",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoadingHistory(false)
+    }
+  }
+
+  // Initialize chat with dynamic initial messages
+  const [initialMessages, setInitialMessages] = useState<any[]>([
+    {
+      id: "welcome",
+      role: "assistant",
+      content:
+        "Hi, I'm Tattty! I'll help you create a meaningful tattoo design based on your life story. Ready to start our journey together?",
+    },
+  ])
+
   const { messages, input, handleInputChange, handleSubmit, append, isLoading, reload } = useChat({
     api: "/api/chat",
-    initialMessages: [
-      {
-        id: "welcome",
-        role: "assistant",
-        content:
-          "Hi, I'm Tattty! I'll help you create a meaningful tattoo design based on your life story. Ready to start our journey together?",
-      },
-    ],
+    initialMessages: chatHistory.length > 0 ? [] : initialMessages,
     body: {
-      userId: userId, // Pass userId to the API for storing chat history
+      userId: userId,
     },
     onFinish: async (message) => {
-      if (step === 3) {
-        setStep(4)
+      // Check if the message contains a style selection request
+      if (
+        message.content.toLowerCase().includes("select a tattoo style") ||
+        message.content.toLowerCase().includes("choose a style")
+      ) {
+        setShowStyleSelector(true)
+      }
+
+      // Check if the message contains an image prompt
+      const promptMatch = message.content.match(/IMAGE PROMPT:(.*?)(?:\n|$)/s)
+      if (promptMatch && promptMatch[1]) {
+        const extractedPrompt = promptMatch[1].trim()
+        setImagePrompt(extractedPrompt)
       }
     },
   })
@@ -60,66 +117,35 @@ export default function TattooGenerator() {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
     }
-  }, [messages])
+  }, [messages, chatHistory])
 
-  // Progress through the conversation steps
-  useEffect(() => {
-    const handleStepProgression = async () => {
-      if (messages.length === 2 && step === 0) {
-        // After user's first response, ask about significant life events
-        setTimeout(() => {
-          append({
-            role: "assistant",
-            content:
-              "Thank you for sharing. Could you tell me about a significant life event or challenge that has shaped who you are today?",
-          })
-          setStep(1)
-        }, 500)
-      } else if (messages.length === 4 && step === 1) {
-        // After user's second response, ask about what they want their tattoo to represent
-        setTimeout(() => {
-          append({
-            role: "assistant",
-            content: "That's powerful. What emotions, values, or qualities would you like your tattoo to represent?",
-          })
-          setStep(2)
-        }, 500)
-      } else if (messages.length === 6 && step === 2) {
-        // After user's third response, show style selector
-        setTimeout(() => {
-          append({
-            role: "assistant",
-            content: "Great! Now, please select a tattoo style that resonates with you.",
-          })
-          setStep(3)
-        }, 500)
-      }
-    }
-
-    handleStepProgression()
-  }, [messages.length, step, append])
-
-  // Handle style selection and final prompt generation
+  // Handle style selection
   const handleStyleSelect = async (style: string) => {
     setSelectedStyle(style)
+    setShowStyleSelector(false)
 
+    // Send the style selection as a user message
     append({
       role: "user",
       content: `I'd like my tattoo in ${style} style.`,
     })
 
-    setTimeout(() => {
-      append({
-        role: "assistant",
-        content:
-          "Thank you for all your input. I'll now craft a detailed prompt based on your story and style preference to generate your personalized tattoo design.",
+    // Generate the prompt based on the conversation and selected style
+    setIsGeneratingPrompt(true)
+    try {
+      const allMessages = [...messages, { role: "user" as const, content: `I'd like my tattoo in ${style} style.` }]
+      const prompt = await engineerTattooPrompt(allMessages)
+      setImagePrompt(prompt)
+    } catch (error) {
+      console.error("Error generating prompt:", error)
+      toast({
+        title: "Error",
+        description: "Failed to generate tattoo prompt",
+        variant: "destructive",
       })
-    }, 500)
-  }
-
-  // Handle the prompt from the prompt engineer
-  const handlePromptGenerated = (prompt: string) => {
-    setImagePrompt(prompt)
+    } finally {
+      setIsGeneratingPrompt(false)
+    }
   }
 
   // Generate the image using Stability AI
@@ -162,11 +188,21 @@ export default function TattooGenerator() {
   // Reset the conversation
   const handleReset = () => {
     reload()
-    setStep(0)
     setGeneratedImage(null)
     setImagePrompt("")
     setSelectedStyle("")
+    setShowStyleSelector(false)
   }
+
+  // Combine chat history with current messages for display
+  const displayMessages =
+    chatHistory.length > 0 && messages.length === 0
+      ? chatHistory.map((msg: any) => ({
+          id: msg.id,
+          role: msg.role,
+          content: msg.content,
+        }))
+      : messages
 
   return (
     <MainLayout>
@@ -188,53 +224,64 @@ export default function TattooGenerator() {
                 ref={chatContainerRef}
                 className="h-[500px] overflow-y-auto p-6 space-y-4 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent"
               >
-                {messages.map((message) => (
-                  <ChatMessage key={message.id} message={message} isLoading={false} />
-                ))}
-
-                {isLoading && (
-                  <div className="flex justify-start">
-                    <div className="bg-zinc-800/80 border border-zinc-700 rounded-xl p-4 text-zinc-100 flex items-center space-x-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Thinking...</span>
-                    </div>
+                {isLoadingHistory ? (
+                  <div className="flex justify-center items-center h-full">
+                    <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
                   </div>
-                )}
+                ) : (
+                  <>
+                    {displayMessages.map((message) => (
+                      <ChatMessage key={message.id} message={message} isLoading={false} />
+                    ))}
 
-                {/* Show style selector after the appropriate message */}
-                {step === 3 && messages.some((m) => m.content.includes("select a tattoo style")) && (
-                  <div className="my-4">
-                    <TattooStyleSelector onSelect={handleStyleSelect} />
-                  </div>
-                )}
+                    {isLoading && (
+                      <div className="flex justify-start">
+                        <div className="bg-zinc-800/80 border border-zinc-700 rounded-xl p-4 text-zinc-100 flex items-center space-x-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Thinking...</span>
+                        </div>
+                      </div>
+                    )}
 
-                {/* Show prompt engineer after style selection */}
-                {step === 4 && !imagePrompt && (
-                  <PromptEngineer messages={messages} onPromptGenerated={handlePromptGenerated} />
+                    {/* Show style selector when prompted */}
+                    {showStyleSelector && (
+                      <div className="my-4">
+                        <TattooStyleSelector onSelect={handleStyleSelect} />
+                      </div>
+                    )}
+
+                    {/* Show prompt generation indicator */}
+                    {isGeneratingPrompt && (
+                      <div className="flex justify-center my-4">
+                        <div className="bg-zinc-800/80 border border-zinc-700 rounded-xl p-4 text-zinc-100 flex items-center space-x-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Creating your personalized tattoo prompt...</span>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 
               {/* Input Area */}
-              {step < 3 && (
-                <div className="p-4 border-t border-zinc-800">
-                  <form onSubmit={handleSubmit} className="flex space-x-2">
-                    <Textarea
-                      value={input}
-                      onChange={handleInputChange}
-                      placeholder="Share your story with Tattty..."
-                      className="flex-1 bg-zinc-800 border-zinc-700 focus:border-amber-500 text-white"
-                      disabled={isLoading}
-                    />
-                    <Button
-                      type="submit"
-                      disabled={isLoading || input.trim().length === 0}
-                      className="bg-gradient-to-r from-red-500 to-amber-500 hover:from-red-600 hover:to-amber-600 text-white"
-                    >
-                      {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
-                    </Button>
-                  </form>
-                </div>
-              )}
+              <div className="p-4 border-t border-zinc-800">
+                <form onSubmit={handleSubmit} className="flex space-x-2">
+                  <Textarea
+                    value={input}
+                    onChange={handleInputChange}
+                    placeholder="Share your story with Tattty..."
+                    className="flex-1 bg-zinc-800 border-zinc-700 focus:border-amber-500 text-white"
+                    disabled={isLoading || isLoadingHistory || isGeneratingPrompt}
+                  />
+                  <Button
+                    type="submit"
+                    disabled={isLoading || isLoadingHistory || isGeneratingPrompt || input.trim().length === 0}
+                    className="bg-gradient-to-r from-red-500 to-amber-500 hover:from-red-600 hover:to-amber-600 text-white"
+                  >
+                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+                  </Button>
+                </form>
+              </div>
             </div>
 
             {/* Image Generation Section */}

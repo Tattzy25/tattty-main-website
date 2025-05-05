@@ -16,7 +16,7 @@ import {
 import { Icons } from "@/components/icons"
 import { toast } from "@/components/ui/use-toast"
 import { supabase } from "@/lib/supabase"
-import { deleteDesign } from "@/app/actions/upload"
+import { deleteDesign } from "@/app/actions/delete-design"
 
 interface Design {
   id: string
@@ -168,10 +168,8 @@ export function DesignGrid() {
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {designs.map(
-          (design) =>
-            (
-              <Card key={design.id} className="border-gold-500/20 bg-black/40 overflow-hidden group">
+        {designs.map((design) => (
+          <Card key={design.id} className="border-gold-500/20 bg-black/40 overflow-hidden group">
             <div className="aspect-square relative overflow-hidden">
               <Image
                 src={design.image_url || "/placeholder.svg"}
@@ -197,7 +195,7 @@ export function DesignGrid() {
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
-                        variant="outline\"tline"
+                        variant="outline"
                         size="icon"
                         className="bg-black/50 border-zinc-700 text-white hover:bg-black/70"
                       >
@@ -238,8 +236,7 @@ export function DesignGrid() {
               )}
             </CardFooter>
           </Card>
-            ),
-        )}
+        ))}
       </div>
 
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

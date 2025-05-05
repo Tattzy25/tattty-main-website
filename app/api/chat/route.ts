@@ -23,6 +23,7 @@ IMPORTANT GUIDELINES:
 - Focus on creating designs that represent personal growth, transformation, and resilience
 - Avoid generic or cliché tattoo designs
 - Never include inappropriate or offensive content in designs
+- After a few exchanges, suggest the user select a tattoo style by saying "Now, please select a tattoo style that resonates with you."
 
 When creating the final image prompt:
 1. Incorporate specific elements from the user's story
@@ -45,8 +46,8 @@ Remember: Your goal is to help users translate their life experiences into meani
 
     // Store the conversation in the database if userId is provided
     if (userId) {
+      // Get the latest messages
       const userMessage = messages.filter((m) => m.role === "user").pop()
-      const assistantMessage = messages.filter((m) => m.role === "assistant").pop()
 
       if (userMessage) {
         // Store the user message
@@ -58,18 +59,25 @@ Remember: Your goal is to help users translate their life experiences into meani
         })
       }
 
-      if (assistantMessage) {
-        // Store the assistant message
+      // We'll store the assistant's response in a separate function
+      // that captures the stream and saves it to the database
+      const { textStream, text } = await captureStream(response.textStream)
+
+      // Store the assistant's response after it's complete
+      if (text) {
         await supabase.from("chat_history").insert({
           user_id: userId,
           role: "assistant",
-          content: assistantMessage.content,
+          content: text,
           created_at: new Date().toISOString(),
         })
       }
+
+      // Return the streaming response
+      return new StreamingTextResponse(textStream)
     }
 
-    // Return the streaming response
+    // Return the streaming response if no userId
     return new StreamingTextResponse(response.textStream)
   } catch (error) {
     console.error("Error in chat API:", error)
@@ -78,6 +86,33 @@ Remember: Your goal is to help users translate their life experiences into meani
       headers: { "Content-Type": "application/json" },
     })
   }
+}
+
+// Helper function to capture a stream and return both the captured text and a new stream
+async function captureStream(stream: ReadableStream): Promise<{ textStream: ReadableStream; text: string }> {
+  const reader = stream.getReader()
+  const decoder = new TextDecoder()
+  let text = ""
+
+  const newStream = new ReadableStream({
+    async start(controller) {
+      try {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          const chunk = decoder.decode(value, { stream: true })
+          text += chunk
+          controller.enqueue(value)
+        }
+        controller.close()
+      } catch (error) {
+        controller.error(error)
+      }
+    },
+  })
+
+  return { textStream: newStream, text }
 }
 
 // Add a GET endpoint to retrieve chat history
