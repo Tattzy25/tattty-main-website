@@ -116,6 +116,7 @@ export async function uploadAIGeneratedDesign(base64Image: string, title: string
 
 /**
  * Deletes a tattoo design and its associated image
+ * This function is exported as deleteDesign for backward compatibility
  */
 export async function deleteTattooDesign(designId: string) {
   try {
@@ -165,6 +166,9 @@ export async function deleteTattooDesign(designId: string) {
     }
   }
 }
+
+// Export deleteDesign as an alias for deleteTattooDesign for backward compatibility
+export const deleteDesign = deleteTattooDesign
 
 /**
  * Updates a user's profile avatar

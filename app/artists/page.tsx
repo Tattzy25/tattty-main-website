@@ -22,6 +22,7 @@ export default async function ArtistsPage() {
     .eq("is_verified", true)
     .order("created_at", { ascending: false })
     .limit(8)
+    .catch(() => ({ data: [] }))
 
   // Fetch artist of the month
   const now = new Date()
@@ -38,6 +39,7 @@ export default async function ArtistsPage() {
     .eq("month", month)
     .eq("year", year)
     .single()
+    .catch(() => ({ data: null }))
 
   return (
     <MainLayout>
@@ -62,7 +64,7 @@ export default async function ArtistsPage() {
                   className="bg-zinc-800 border-zinc-700 text-white"
                 />
               </div>
-              <Button className="bg-gold-500 hover:bg-gold-600 text-black">
+              <Button className="bg-amber-500 hover:bg-amber-600 text-black">
                 <Icons.search className="mr-2 h-4 w-4" />
                 Search
               </Button>
@@ -99,14 +101,17 @@ export default async function ArtistsPage() {
           {artistOfMonth && (
             <div className="mb-16">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gold-500">Artist of the Month</h2>
+                <h2 className="text-2xl font-bold text-amber-500">Artist of the Month</h2>
               </div>
 
               <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl border border-zinc-800 overflow-hidden">
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="relative aspect-square md:aspect-auto md:h-full">
                     <Image
-                      src={artistOfMonth.artist_portfolios?.image_url || "/placeholder.svg?height=600&width=600"}
+                      src={
+                        artistOfMonth.artist_portfolios?.image_url ||
+                        "/placeholder.svg?height=600&width=600&query=tattoo+artist"
+                      }
                       alt={artistOfMonth.artist_profiles?.business_name || "Artist of the Month"}
                       fill
                       className="object-cover"
@@ -114,15 +119,15 @@ export default async function ArtistsPage() {
                   </div>
                   <div className="p-8 flex flex-col">
                     <div className="mb-4">
-                      <span className="inline-flex items-center rounded-full bg-gold-500/20 px-3 py-1 text-sm font-medium text-gold-500">
+                      <span className="inline-flex items-center rounded-full bg-amber-500/20 px-3 py-1 text-sm font-medium text-amber-500">
                         <Icons.award className="mr-1 h-4 w-4" />
                         Artist of the Month
                       </span>
                     </div>
                     <h3 className="text-3xl font-bold text-white mb-2">
-                      {artistOfMonth.artist_profiles?.business_name}
+                      {artistOfMonth.artist_profiles?.business_name || "Featured Artist"}
                     </h3>
-                    <p className="text-zinc-400 mb-4">{artistOfMonth.artist_profiles?.location}</p>
+                    <p className="text-zinc-400 mb-4">{artistOfMonth.artist_profiles?.location || "Location"}</p>
 
                     <div className="flex flex-wrap gap-2 mb-6">
                       {artistOfMonth.artist_profiles?.specialties?.map((specialty: string, index: number) => (
@@ -136,11 +141,11 @@ export default async function ArtistsPage() {
                     </div>
 
                     <p className="text-zinc-300 mb-6 flex-grow">
-                      {artistOfMonth.description || artistOfMonth.artist_profiles?.bio}
+                      {artistOfMonth.description || artistOfMonth.artist_profiles?.bio || "No description available."}
                     </p>
 
                     <div className="flex gap-4">
-                      <Button asChild className="bg-gold-500 hover:bg-gold-600 text-black">
+                      <Button asChild className="bg-amber-500 hover:bg-amber-600 text-black">
                         <Link href={`/artists/${artistOfMonth.artist_profiles?.id}`}>View Profile</Link>
                       </Button>
                       <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
@@ -157,7 +162,7 @@ export default async function ArtistsPage() {
           {/* Featured Artists */}
           <div className="mb-16">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gold-500">Featured Artists</h2>
+              <h2 className="text-2xl font-bold text-amber-500">Featured Artists</h2>
               <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
                 View All
               </Button>
@@ -174,9 +179,14 @@ export default async function ArtistsPage() {
 
               <TabsContent value="all" className="mt-0">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {featuredArtists?.map((artist) => (
-                    <ArtistCard key={artist.id} artist={artist} />
-                  ))}
+                  {featuredArtists?.map((artist) => <ArtistCard key={artist.id} artist={artist} />) || (
+                    <>
+                      <ArtistCardPlaceholder />
+                      <ArtistCardPlaceholder />
+                      <ArtistCardPlaceholder />
+                      <ArtistCardPlaceholder />
+                    </>
+                  )}
                 </div>
               </TabsContent>
 
@@ -184,13 +194,54 @@ export default async function ArtistsPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {featuredArtists
                     ?.filter((artist) => artist.specialties?.includes("Traditional"))
-                    .map((artist) => (
-                      <ArtistCard key={artist.id} artist={artist} />
-                    ))}
+                    .map((artist) => <ArtistCard key={artist.id} artist={artist} />) || (
+                    <>
+                      <ArtistCardPlaceholder />
+                      <ArtistCardPlaceholder />
+                    </>
+                  )}
                 </div>
               </TabsContent>
 
               {/* Other tabs content */}
+              <TabsContent value="japanese" className="mt-0">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {featuredArtists
+                    ?.filter((artist) => artist.specialties?.includes("Japanese"))
+                    .map((artist) => <ArtistCard key={artist.id} artist={artist} />) || (
+                    <>
+                      <ArtistCardPlaceholder />
+                      <ArtistCardPlaceholder />
+                    </>
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="blackwork" className="mt-0">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {featuredArtists
+                    ?.filter((artist) => artist.specialties?.includes("Blackwork"))
+                    .map((artist) => <ArtistCard key={artist.id} artist={artist} />) || (
+                    <>
+                      <ArtistCardPlaceholder />
+                      <ArtistCardPlaceholder />
+                    </>
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="realism" className="mt-0">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {featuredArtists
+                    ?.filter((artist) => artist.specialties?.includes("Realism"))
+                    .map((artist) => <ArtistCard key={artist.id} artist={artist} />) || (
+                    <>
+                      <ArtistCardPlaceholder />
+                      <ArtistCardPlaceholder />
+                    </>
+                  )}
+                </div>
+              </TabsContent>
             </Tabs>
           </div>
 
@@ -202,7 +253,7 @@ export default async function ArtistsPage() {
             <p className="text-zinc-300 max-w-2xl mx-auto mb-6">
               Join our platform to showcase your work, connect with clients, and grow your business.
             </p>
-            <Button asChild className="bg-gold-500 hover:bg-gold-600 text-black">
+            <Button asChild className="bg-amber-500 hover:bg-amber-600 text-black">
               <Link href="/artist-dashboard/create-profile">Join as an Artist</Link>
             </Button>
           </div>
@@ -214,7 +265,7 @@ export default async function ArtistsPage() {
 
 function ArtistCard({ artist }: { artist: any }) {
   // Get the first portfolio image or use a placeholder
-  const portfolioImage = artist.artist_portfolios?.[0]?.image_url || "/placeholder.svg?height=300&width=300"
+  const portfolioImage = artist.artist_portfolios?.[0]?.image_url || "/placeholder.svg?key=t2aok"
 
   return (
     <Card className="overflow-hidden border-zinc-800 bg-zinc-900/50 backdrop-blur-sm group">
@@ -228,8 +279,8 @@ function ArtistCard({ artist }: { artist: any }) {
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
       </div>
       <CardContent className="p-4">
-        <h3 className="text-lg font-semibold text-gold-500">{artist.business_name}</h3>
-        <p className="text-sm text-zinc-400">{artist.location}</p>
+        <h3 className="text-lg font-semibold text-amber-500">{artist.business_name || "Artist Name"}</h3>
+        <p className="text-sm text-zinc-400">{artist.location || "Location"}</p>
         <div className="flex flex-wrap gap-1 mt-2">
           {artist.specialties?.slice(0, 3).map((specialty: string, index: number) => (
             <span
@@ -247,15 +298,35 @@ function ArtistCard({ artist }: { artist: any }) {
         </div>
       </CardContent>
       <CardFooter className="p-4 pt-0 flex justify-between">
-        <Button asChild variant="outline" size="sm" className="border-gold-500/30 hover:bg-gold-500/10">
+        <Button asChild variant="outline" size="sm" className="border-amber-500/30 hover:bg-amber-500/10">
           <Link href={`/artists/${artist.id}`}>View Profile</Link>
         </Button>
-        <Button asChild variant="outline" size="sm" className="border-gold-500/30 hover:bg-gold-500/10">
+        <Button asChild variant="outline" size="sm" className="border-amber-500/30 hover:bg-amber-500/10">
           <Link href={`/messages/new?artist=${artist.id}`}>
             <Icons.messageSquare className="mr-2 h-4 w-4" />
             Contact
           </Link>
         </Button>
+      </CardFooter>
+    </Card>
+  )
+}
+
+function ArtistCardPlaceholder() {
+  return (
+    <Card className="overflow-hidden border-zinc-800 bg-zinc-900/50 backdrop-blur-sm">
+      <div className="aspect-square relative bg-zinc-800 animate-pulse"></div>
+      <CardContent className="p-4">
+        <div className="h-5 bg-zinc-800 rounded animate-pulse mb-2"></div>
+        <div className="h-4 bg-zinc-800 rounded animate-pulse w-2/3"></div>
+        <div className="flex flex-wrap gap-1 mt-2">
+          <div className="h-4 bg-zinc-800 rounded animate-pulse w-16"></div>
+          <div className="h-4 bg-zinc-800 rounded animate-pulse w-20"></div>
+        </div>
+      </CardContent>
+      <CardFooter className="p-4 pt-0 flex justify-between">
+        <div className="h-8 bg-zinc-800 rounded animate-pulse w-24"></div>
+        <div className="h-8 bg-zinc-800 rounded animate-pulse w-24"></div>
       </CardFooter>
     </Card>
   )
