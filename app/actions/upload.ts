@@ -1,141 +1,100 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { put, del } from "@vercel/blob"
 import { supabase } from "@/lib/supabase"
-import { uploadToBlob, uploadBase64ToBlob, deleteFromBlob } from "@/lib/blob-storage"
+import { getSession } from "@/lib/auth"
+
+// Type definitions
+type UploadResult = {
+  url: string
+  path: string
+  success: boolean
+  error?: string
+}
 
 /**
- * Uploads a tattoo design image and saves it to the database
+ * Upload a tattoo design image to Vercel Blob and save to database
  */
-export async function uploadTattooDesign(formData: FormData) {
+export async function uploadTattooDesign(formData: FormData): Promise<UploadResult> {
   try {
-    // Get the current user
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-    if (!session) {
-      return { success: false, error: "Unauthorized" }
+    const session = await getSession()
+    if (!session?.user?.id) {
+      return { url: "", path: "", success: false, error: "Unauthorized" }
     }
 
-    const userId = session.user.id
     const title = formData.get("title") as string
     const description = formData.get("description") as string
-    const prompt = formData.get("prompt") as string
     const style = formData.get("style") as string
+    const prompt = formData.get("prompt") as string
+    const isPublic = formData.get("isPublic") === "true"
+    const isAiGenerated = formData.get("isAiGenerated") === "true"
     const file = formData.get("image") as File
 
-    // Upload image to Blob
-    const uploadResult = await uploadToBlob(file, "tattoo-designs")
-    if (!uploadResult.success) {
-      return { success: false, error: uploadResult.error }
+    if (!file) {
+      return { url: "", path: "", success: false, error: "No image provided" }
     }
+
+    // Generate a unique filename
+    const fileName = `${session.user.id}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "-")}`
+    const path = `tattoo-designs/${fileName}`
+
+    // Upload to Vercel Blob
+    const blob = await put(path, file, { access: "public" })
 
     // Save to database
     const { data, error } = await supabase
       .from("tattoo_designs")
       .insert({
-        user_id: userId,
+        user_id: session.user.id,
         title: title || "Untitled Design",
         description,
-        prompt,
         style,
-        image_url: uploadResult.url,
-        image_path: uploadResult.path,
-        is_ai_generated: !!prompt,
+        prompt,
+        image_url: blob.url,
+        image_path: path,
+        is_public: isPublic,
+        is_ai_generated: isAiGenerated,
       })
       .select()
+      .single()
 
     if (error) {
-      // Clean up the uploaded blob if database insert fails
-      await deleteFromBlob(uploadResult.path)
-      return { success: false, error: error.message }
+      // Delete the blob if database insert fails
+      await del(path)
+      console.error("Database error:", error)
+      return { url: "", path: "", success: false, error: error.message }
     }
 
     revalidatePath("/dashboard/designs")
-    return { success: true, data }
+    return { url: blob.url, path, success: true }
   } catch (error) {
-    console.error("Error uploading tattoo design:", error)
+    console.error("Upload error:", error)
     return {
+      url: "",
+      path: "",
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error during upload",
+      error: error instanceof Error ? error.message : "Unknown error",
     }
   }
 }
 
 /**
- * Uploads an AI-generated design from base64 data
+ * Delete a tattoo design from Vercel Blob and database
  */
-export async function uploadAIGeneratedDesign(base64Image: string, title: string, prompt: string, style: string) {
+export async function deleteTattooDesign(designId: string): Promise<{ success: boolean; error?: string }> {
   try {
-    // Get the current user
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-    if (!session) {
+    const session = await getSession()
+    if (!session?.user?.id) {
       return { success: false, error: "Unauthorized" }
     }
-
-    const userId = session.user.id
-
-    // Upload image to Blob
-    const uploadResult = await uploadBase64ToBlob(base64Image, "ai-generated")
-    if (!uploadResult.success) {
-      return { success: false, error: uploadResult.error }
-    }
-
-    // Save to database
-    const { data, error } = await supabase
-      .from("tattoo_designs")
-      .insert({
-        user_id: userId,
-        title: title || "AI Generated Design",
-        prompt,
-        style,
-        image_url: uploadResult.url,
-        image_path: uploadResult.path,
-        is_ai_generated: true,
-      })
-      .select()
-
-    if (error) {
-      // Clean up the uploaded blob if database insert fails
-      await deleteFromBlob(uploadResult.path)
-      return { success: false, error: error.message }
-    }
-
-    revalidatePath("/dashboard/designs")
-    return { success: true, data }
-  } catch (error) {
-    console.error("Error uploading AI generated design:", error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error during upload",
-    }
-  }
-}
-
-/**
- * Deletes a tattoo design and its associated image
- * This function is exported as deleteDesign for backward compatibility
- */
-export async function deleteTattooDesign(designId: string) {
-  try {
-    // Get the current user
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-    if (!session) {
-      return { success: false, error: "Unauthorized" }
-    }
-
-    const userId = session.user.id
 
     // Get the design to check ownership and get the image path
     const { data: design, error: fetchError } = await supabase
       .from("tattoo_designs")
       .select("*")
       .eq("id", designId)
-      .eq("user_id", userId)
+      .eq("user_id", session.user.id)
       .single()
 
     if (fetchError || !design) {
@@ -147,123 +106,71 @@ export async function deleteTattooDesign(designId: string) {
       .from("tattoo_designs")
       .delete()
       .eq("id", designId)
-      .eq("user_id", userId)
+      .eq("user_id", session.user.id)
 
     if (deleteError) {
       return { success: false, error: deleteError.message }
     }
 
-    // The trigger we created will handle adding the image to the deleted_images table
-    // for later cleanup by our background job
+    // Delete from Vercel Blob if path exists
+    if (design.image_path) {
+      await del(design.image_path)
+    }
 
     revalidatePath("/dashboard/designs")
     return { success: true }
   } catch (error) {
-    console.error("Error deleting tattoo design:", error)
+    console.error("Delete error:", error)
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error during deletion",
+      error: error instanceof Error ? error.message : "Unknown error",
     }
   }
 }
 
-// Export deleteDesign as an alias for deleteTattooDesign for backward compatibility
+// Alias for backward compatibility
 export const deleteDesign = deleteTattooDesign
 
 /**
- * Updates a user's profile avatar
+ * Upload an artist portfolio image
  */
-export async function updateProfileAvatar(formData: FormData) {
+export async function uploadPortfolioImage(formData: FormData): Promise<UploadResult> {
   try {
-    // Get the current user
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-    if (!session) {
-      return { success: false, error: "Unauthorized" }
+    const session = await getSession()
+    if (!session?.user?.id) {
+      return { url: "", path: "", success: false, error: "Unauthorized" }
     }
 
-    const userId = session.user.id
-    const file = formData.get("avatar") as File
-
-    // Upload image to Blob
-    const uploadResult = await uploadToBlob(file, "avatars")
-    if (!uploadResult.success) {
-      return { success: false, error: uploadResult.error }
-    }
-
-    // Get current profile to check if we need to delete an old avatar
-    const { data: profile } = await supabase.from("user_profiles").select("avatar_path").eq("id", userId).single()
-
-    // Delete old avatar if it exists
-    if (profile?.avatar_path) {
-      await deleteFromBlob(profile.avatar_path)
-    }
-
-    // Update profile
-    const { error } = await supabase.from("user_profiles").upsert({
-      id: userId,
-      avatar_url: uploadResult.url,
-      avatar_path: uploadResult.path,
-      updated_at: new Date().toISOString(),
-    })
-
-    if (error) {
-      // Clean up the uploaded blob if database update fails
-      await deleteFromBlob(uploadResult.path)
-      return { success: false, error: error.message }
-    }
-
-    revalidatePath("/dashboard/settings")
-    return { success: true, url: uploadResult.url }
-  } catch (error) {
-    console.error("Error updating profile avatar:", error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error during upload",
-    }
-  }
-}
-
-/**
- * Uploads an artist portfolio image
- */
-export async function uploadPortfolioImage(formData: FormData) {
-  try {
-    // Get the current user
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-    if (!session) {
-      return { success: false, error: "Unauthorized" }
-    }
-
-    const userId = session.user.id
     const title = formData.get("title") as string
     const description = formData.get("description") as string
     const style = formData.get("style") as string
     const tags = formData.get("tags") as string
     const file = formData.get("image") as File
 
+    if (!file) {
+      return { url: "", path: "", success: false, error: "No image provided" }
+    }
+
     // Get artist profile
     const { data: artistProfile, error: profileError } = await supabase
       .from("artist_profiles")
       .select("id")
-      .eq("id", userId)
+      .eq("id", session.user.id)
       .single()
 
     if (profileError || !artistProfile) {
-      return { success: false, error: "Artist profile not found" }
+      return { url: "", path: "", success: false, error: "Artist profile not found" }
     }
 
-    // Upload image to Blob
-    const uploadResult = await uploadToBlob(file, "portfolio")
-    if (!uploadResult.success) {
-      return { success: false, error: uploadResult.error }
-    }
+    // Generate a unique filename
+    const fileName = `${session.user.id}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "-")}`
+    const path = `artist-portfolios/${fileName}`
+
+    // Upload to Vercel Blob
+    const blob = await put(path, file, { access: "public" })
 
     // Parse tags
-    const tagArray = tags ? tags.split(",").map((tag) => tag.trim()) : []
+    const parsedTags = tags ? tags.split(",").map((tag) => tag.trim()) : []
 
     // Save to database
     const { data, error } = await supabase
@@ -273,25 +180,96 @@ export async function uploadPortfolioImage(formData: FormData) {
         title: title || "Untitled Work",
         description,
         style,
-        tags: tagArray,
-        image_url: uploadResult.url,
-        image_path: uploadResult.path,
+        tags: parsedTags,
+        image_url: blob.url,
+        image_path: path,
       })
       .select()
+      .single()
 
     if (error) {
-      // Clean up the uploaded blob if database insert fails
-      await deleteFromBlob(uploadResult.path)
-      return { success: false, error: error.message }
+      // Delete the blob if database insert fails
+      await del(path)
+      console.error("Database error:", error)
+      return { url: "", path: "", success: false, error: error.message }
     }
 
-    revalidatePath("/artist-dashboard")
-    return { success: true, data }
+    revalidatePath("/artist-dashboard/portfolio")
+    return { url: blob.url, path, success: true }
   } catch (error) {
-    console.error("Error uploading portfolio image:", error)
+    console.error("Upload error:", error)
     return {
+      url: "",
+      path: "",
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error during upload",
+      error: error instanceof Error ? error.message : "Unknown error",
+    }
+  }
+}
+
+/**
+ * Update user profile avatar
+ */
+export async function updateProfileAvatar(formData: FormData): Promise<UploadResult> {
+  try {
+    const session = await getSession()
+    if (!session?.user?.id) {
+      return { url: "", path: "", success: false, error: "Unauthorized" }
+    }
+
+    const file = formData.get("avatar") as File
+    if (!file) {
+      return { url: "", path: "", success: false, error: "No image provided" }
+    }
+
+    // Get current profile to check if we need to delete old avatar
+    const { data: profile } = await supabase
+      .from("user_profiles")
+      .select("avatar_path")
+      .eq("id", session.user.id)
+      .single()
+
+    // Generate a unique filename
+    const fileName = `${session.user.id}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "-")}`
+    const path = `avatars/${fileName}`
+
+    // Upload to Vercel Blob
+    const blob = await put(path, file, { access: "public" })
+
+    // Update database
+    const { error } = await supabase
+      .from("user_profiles")
+      .update({
+        avatar_url: blob.url,
+        avatar_path: path,
+      })
+      .eq("id", session.user.id)
+
+    if (error) {
+      // Delete the blob if database update fails
+      await del(path)
+      console.error("Database error:", error)
+      return { url: "", path: "", success: false, error: error.message }
+    }
+
+    // Delete old avatar if it exists
+    if (profile?.avatar_path) {
+      try {
+        await del(profile.avatar_path)
+      } catch (error) {
+        console.error("Error deleting old avatar:", error)
+      }
+    }
+
+    revalidatePath("/dashboard/settings")
+    return { url: blob.url, path, success: true }
+  } catch (error) {
+    console.error("Avatar update error:", error)
+    return {
+      url: "",
+      path: "",
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
     }
   }
 }

@@ -1,52 +1,53 @@
+import { generateText } from "ai"
+import { openai } from "@ai-sdk/openai"
 import { groq } from "@ai-sdk/groq"
-import { type Message, StreamingTextResponse, experimental_streamText } from "ai"
-import type { NextRequest } from "next/server"
+import { supabase } from "@/lib/supabase"
+import { getPromptFromConversation } from "@/lib/prompt-engineering"
 
-// Set the runtime to edge for best performance
-export const runtime = "edge"
+export const runtime = "nodejs"
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
-    // Extract the messages from the request
-    const { messages } = await req.json()
+    const { messages, model = "openai" } = await req.json()
 
-    // Create system prompt for Tattty
-    const systemPrompt = `You are Tattty, an empathetic AI assistant specialized in helping users create meaningful tattoo designs based on their life stories.
+    // Get the last user message
+    const lastUserMessage = messages.filter((m: any) => m.role === "user").pop()
 
-IMPORTANT GUIDELINES:
-- Be warm, supportive, and non-judgmental when users share personal stories
-- Ask thoughtful follow-up questions to understand the emotional significance of their experiences
-- Identify key themes, symbols, and emotions in their stories
-- When creating an image prompt, be detailed and specific about visual elements
-- Format image prompts with "IMAGE PROMPT:" followed by the detailed description
-- Focus on creating designs that represent personal growth, transformation, and resilience
-- Avoid generic or cliché tattoo designs
-- Never include inappropriate or offensive content in designs
+    // Generate an enhanced prompt based on the conversation
+    const enhancedPrompt = await getPromptFromConversation(messages)
 
-When creating the final image prompt:
-1. Incorporate specific elements from the user's story
-2. Consider the requested tattoo style
-3. Include details about composition, symbolism, and emotional tone
-4. Make the prompt detailed enough for Stability AI to generate a meaningful design
-
-Remember: Your goal is to help users translate their life experiences into meaningful visual art.`
-
-    // Process the conversation with Groq
-    const response = await experimental_streamText({
-      model: groq("meta-llama/llama-4-scout-17b-16e-instruct"),
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...messages.filter((m: Message) => m.role === "user" || m.role === "assistant"),
-      ],
+    // Generate the response
+    const { text } = await generateText({
+      model: model === "openai" ? openai("gpt-4o") : groq("llama3-70b-8192"),
+      prompt: enhancedPrompt || lastUserMessage.content,
       temperature: 0.7,
       maxTokens: 1000,
     })
 
-    // Return the streaming response
-    return new StreamingTextResponse(response.textStream)
+    // Track analytics
+    try {
+      const styleMatch = text.match(/style:\s*([^\n,]+)/i)
+      const themeMatch = text.match(/theme:\s*([^\n,]+)/i)
+
+      if (styleMatch && themeMatch) {
+        const style = styleMatch[1].trim()
+        const theme = themeMatch[1].trim()
+
+        await supabase.from("analytics").insert({
+          style,
+          theme,
+          count: 1,
+        })
+      }
+    } catch (error) {
+      console.error("Analytics error:", error)
+    }
+
+    // Return the response
+    return new Response(text)
   } catch (error) {
-    console.error("Error in chat API:", error)
-    return new Response(JSON.stringify({ error: "Failed to process chat request" }), {
+    console.error("Chat API error:", error)
+    return new Response(JSON.stringify({ error: "Failed to generate response" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     })
