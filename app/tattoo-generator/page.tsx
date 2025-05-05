@@ -26,73 +26,21 @@ export default function TattooGenerator() {
   const [isLoadingHistory, setIsLoadingHistory] = useState(true)
   const chatContainerRef = useRef<HTMLDivElement>(null)
 
-  // Check if user is logged in
-  useEffect(() => {
-    const checkUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      setUserId(user?.id || null)
-
-      if (user?.id) {
-        fetchChatHistory(user.id)
-      } else {
-        setIsLoadingHistory(false)
-      }
-    }
-
-    checkUser()
-  }, [])
-
-  // Fetch chat history from the database
-  const fetchChatHistory = async (userId: string) => {
-    try {
-      setIsLoadingHistory(true)
-      const response = await fetch(`/api/chat?userId=${userId}`)
-      const data = await response.json()
-
-      if (data.messages && Array.isArray(data.messages)) {
-        setChatHistory(data.messages)
-
-        // Convert to the format expected by useChat
-        const formattedMessages = data.messages.map((msg: any) => ({
-          id: msg.id,
-          role: msg.role,
-          content: msg.content,
-        }))
-
-        // Set initial messages if we have history
-        if (formattedMessages.length > 0) {
-          setInitialMessages(formattedMessages)
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching chat history:", error)
-      toast({
-        title: "Error",
-        description: "Failed to load chat history",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoadingHistory(false)
-    }
-  }
-
-  // Initialize chat with dynamic initial messages
-  const [initialMessages, setInitialMessages] = useState<any[]>([
+  // Initialize chat with default welcome message
+  const initialMessages = [
     {
       id: "welcome",
-      role: "assistant",
+      role: "assistant" as const,
       content:
         "Hi, I'm Tattty! I'll help you create a meaningful tattoo design based on your life story. Ready to start our journey together?",
     },
-  ])
+  ]
 
-  const { messages, input, handleInputChange, handleSubmit, append, isLoading, reload } = useChat({
+  const { messages, input, handleInputChange, handleSubmit, append, isLoading, reload, setMessages } = useChat({
     api: "/api/chat",
-    initialMessages: chatHistory.length > 0 ? [] : initialMessages,
+    initialMessages,
     body: {
-      userId: userId,
+      userId,
     },
     onFinish: async (message) => {
       // Check if the message contains a style selection request
@@ -109,15 +57,94 @@ export default function TattooGenerator() {
         const extractedPrompt = promptMatch[1].trim()
         setImagePrompt(extractedPrompt)
       }
+
+      // Store the assistant's response in the database
+      if (userId) {
+        try {
+          await supabase.from("chat_history").insert({
+            user_id: userId,
+            role: "assistant",
+            content: message.content,
+            created_at: new Date().toISOString(),
+          })
+        } catch (error) {
+          console.error("Error saving assistant message:", error)
+        }
+      }
+    },
+    onError: (error) => {
+      console.error("Chat error:", error)
+      toast({
+        title: "Chat Error",
+        description: "There was a problem with the chat. Please try again.",
+        variant: "destructive",
+      })
     },
   })
+
+  // Check if user is logged in
+  useEffect(() => {
+    const checkUser = async () => {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+        setUserId(user?.id || null)
+
+        if (user?.id) {
+          fetchChatHistory(user.id)
+        } else {
+          setIsLoadingHistory(false)
+        }
+      } catch (error) {
+        console.error("Error checking user:", error)
+        setIsLoadingHistory(false)
+      }
+    }
+
+    checkUser()
+  }, [])
+
+  // Fetch chat history from the database
+  const fetchChatHistory = async (userId: string) => {
+    try {
+      setIsLoadingHistory(true)
+      const response = await fetch(`/api/chat?userId=${userId}`)
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch chat history: ${response.status}`)
+      }
+
+      const data = await response.json()
+
+      if (data.messages && Array.isArray(data.messages)) {
+        setChatHistory(data.messages)
+
+        // Convert to the format expected by useChat
+        if (data.messages.length > 0) {
+          const formattedMessages = data.messages.map((msg: any) => ({
+            id: msg.id || Math.random().toString(36).substring(2, 15),
+            role: msg.role as "user" | "assistant" | "system",
+            content: msg.content,
+          }))
+
+          // Set messages from history
+          setMessages(formattedMessages)
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching chat history:", error)
+    } finally {
+      setIsLoadingHistory(false)
+    }
+  }
 
   // Auto-scroll to bottom of chat
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
     }
-  }, [messages, chatHistory])
+  }, [messages])
 
   // Handle style selection
   const handleStyleSelect = async (style: string) => {
@@ -125,15 +152,32 @@ export default function TattooGenerator() {
     setShowStyleSelector(false)
 
     // Send the style selection as a user message
+    const styleMessage = `I'd like my tattoo in ${style} style.`
+
+    // Add to UI immediately
     append({
       role: "user",
-      content: `I'd like my tattoo in ${style} style.`,
+      content: styleMessage,
     })
+
+    // Save to database
+    if (userId) {
+      try {
+        await supabase.from("chat_history").insert({
+          user_id: userId,
+          role: "user",
+          content: styleMessage,
+          created_at: new Date().toISOString(),
+        })
+      } catch (error) {
+        console.error("Error saving style selection:", error)
+      }
+    }
 
     // Generate the prompt based on the conversation and selected style
     setIsGeneratingPrompt(true)
     try {
-      const allMessages = [...messages, { role: "user" as const, content: `I'd like my tattoo in ${style} style.` }]
+      const allMessages = [...messages, { role: "user" as const, content: styleMessage }]
       const prompt = await engineerTattooPrompt(allMessages)
       setImagePrompt(prompt)
     } catch (error) {
@@ -192,17 +236,8 @@ export default function TattooGenerator() {
     setImagePrompt("")
     setSelectedStyle("")
     setShowStyleSelector(false)
+    setMessages(initialMessages)
   }
-
-  // Combine chat history with current messages for display
-  const displayMessages =
-    chatHistory.length > 0 && messages.length === 0
-      ? chatHistory.map((msg: any) => ({
-          id: msg.id,
-          role: msg.role,
-          content: msg.content,
-        }))
-      : messages
 
   return (
     <MainLayout>
@@ -230,7 +265,7 @@ export default function TattooGenerator() {
                   </div>
                 ) : (
                   <>
-                    {displayMessages.map((message) => (
+                    {messages.map((message) => (
                       <ChatMessage key={message.id} message={message} isLoading={false} />
                     ))}
 
