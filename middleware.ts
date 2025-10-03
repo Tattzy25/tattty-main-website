@@ -1,15 +1,11 @@
-import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
-  const supabase = createMiddlewareClient({ req, res })
 
-  // Check auth status
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+  // Auth is disabled for now - bypass all checks
+  const session = null
 
   // Protected routes that require authentication
   const protectedRoutes = ["/dashboard", "/artist-dashboard", "/admin"]
@@ -34,21 +30,10 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", req.url))
   }
 
-  // If the user is on a protected route and not logged in, redirect to login
-  if (isProtectedRoute && !session) {
-    return NextResponse.redirect(new URL("/auth/login", req.url))
-  }
-
-  // If the user is on an admin route, check if they have admin role
-  if (isAdminRoute && session) {
-    // Get user role from Supabase
-    const { data: userRole } = await supabase.from("user_roles").select("role").eq("user_id", session.user.id).single()
-
-    // If not admin, redirect to dashboard
-    if (!userRole || userRole.role !== "admin") {
-      return NextResponse.redirect(new URL("/dashboard", req.url))
-    }
-  }
+  // Temporarily disable auth checks
+  // if (isProtectedRoute && !session) {
+  //   return NextResponse.redirect(new URL("/auth/login", req.url))
+  // }
 
   return res
 }

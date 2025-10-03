@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Audiowide&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -24,6 +26,14 @@
     --input: 240 5.9% 90%;
     --ring: 240 5.9% 10%;
     --radius: 0.5rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
@@ -46,15 +56,37 @@
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 240 4.9% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
 
 @layer base {
-  * {
-    @apply border-border;
+  /* Apply border color only to elements that commonly use borders */
+  input,
+  textarea,
+  select,
+  button,
+  fieldset,
+  legend,
+  table,
+  th,
+  td,
+  hr,
+  img,
+  .border,
+  .bordered {
+    border-color: hsl(var(--border));
   }
   body {
-    @apply bg-background text-foreground;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
   }
 }
 
@@ -82,9 +114,77 @@
   display: none;
 }
 
+/* 3D Transform Styles for Floating Card Gallery */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+/* Animation delays for gallery cards */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Slide-in animation for sent messages */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-in-up {
+  animation: slideInUp 0.5s ease-out forwards;
+}
+
+.delay-1000 {
+  animation-delay: 1000ms;
+}
+
+.delay-2000 {
+  animation-delay: 2000ms;
+}
+
+.delay-500 {
+  animation-delay: 500ms;
+}
+
 .scrollbar-hide {
   -ms-overflow-style: none;
+  -webkit-scrollbar-width: none;
   scrollbar-width: none;
+  /* Webkit fallback for Safari and older Chrome */
+  -webkit-scrollbar-width: none;
+}
+
+/* Add webkit scrollbar hiding for better compatibility */
+.scrollbar-hide::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  background: transparent;
 }
 
 /* Anti-screenshot styles */
@@ -182,29 +282,29 @@
   height: 17px;
   position: absolute;
   top: 5px;
-  animation-name: fade00;
-  animation-duration: 2s;
-  animation-iteration-count: infinite;
   -webkit-animation-name: fade00;
   -webkit-animation-duration: 2s;
   -webkit-animation-iteration-count: infinite;
+  animation-name: fade00;
+  animation-duration: 2s;
+  animation-iteration-count: infinite;
 }
 
 .h2 {
-  transform: rotate(60deg);
   -webkit-transform: rotate(60deg);
+  transform: rotate(60deg);
 }
 
 .h3 {
-  transform: rotate(-60deg);
   -webkit-transform: rotate(-60deg);
+  transform: rotate(-60deg);
 }
 
 .gel {
   height: 30px;
   width: 30px;
-  transition: all .3s;
   -webkit-transition: all .3s;
+  transition: all .3s;
   position: absolute;
   top: 50%;
   left: 50%;
@@ -213,12 +313,12 @@
 .center-gel {
   margin-left: -15px;
   margin-top: -15px;
-  animation-name: pulse00;
-  animation-duration: 2s;
-  animation-iteration-count: infinite;
   -webkit-animation-name: pulse00;
   -webkit-animation-duration: 2s;
   -webkit-animation-iteration-count: infinite;
+  animation-name: pulse00;
+  animation-duration: 2s;
+  animation-iteration-count: infinite;
 }
 
 .c1 {
@@ -407,69 +507,69 @@
 }
 
 .r1 {
-  animation-name: pulse00;
-  animation-duration: 2s;
-  animation-iteration-count: infinite;
-  animation-delay: .2s;
   -webkit-animation-name: pulse00;
   -webkit-animation-duration: 2s;
   -webkit-animation-iteration-count: infinite;
   -webkit-animation-delay: .2s;
+  animation-name: pulse00;
+  animation-duration: 2s;
+  animation-iteration-count: infinite;
+  animation-delay: .2s;
 }
 
 .r2 {
-  animation-name: pulse00;
-  animation-duration: 2s;
-  animation-iteration-count: infinite;
-  animation-delay: .4s;
   -webkit-animation-name: pulse00;
   -webkit-animation-duration: 2s;
   -webkit-animation-iteration-count: infinite;
   -webkit-animation-delay: .4s;
-}
-
-.r3 {
   animation-name: pulse00;
   animation-duration: 2s;
   animation-iteration-count: infinite;
-  animation-delay: .6s;
+  animation-delay: .4s;
+}
+
+.r3 {
   -webkit-animation-name: pulse00;
   -webkit-animation-duration: 2s;
   -webkit-animation-iteration-count: infinite;
   -webkit-animation-delay: .6s;
+  animation-name: pulse00;
+  animation-duration: 2s;
+  animation-iteration-count: infinite;
+  animation-delay: .6s;
 }
 
 .r1 > .hex-brick {
-  animation-name: fade00;
-  animation-duration: 2s;
-  animation-iteration-count: infinite;
-  animation-delay: .2s;
   -webkit-animation-name: fade00;
   -webkit-animation-duration: 2s;
   -webkit-animation-iteration-count: infinite;
   -webkit-animation-delay: .2s;
-}
-
-.r2 > .hex-brick {
   animation-name: fade00;
   animation-duration: 2s;
   animation-iteration-count: infinite;
-  animation-delay: .4s;
+  animation-delay: .2s;
+}
+
+.r2 > .hex-brick {
   -webkit-animation-name: fade00;
   -webkit-animation-duration: 2s;
   -webkit-animation-iteration-count: infinite;
   -webkit-animation-delay: .4s;
-}
-
-.r3 > .hex-brick {
   animation-name: fade00;
   animation-duration: 2s;
   animation-iteration-count: infinite;
-  animation-delay: .6s;
+  animation-delay: .4s;
+}
+
+.r3 > .hex-brick {
   -webkit-animation-name: fade00;
   -webkit-animation-duration: 2s;
   -webkit-animation-iteration-count: infinite;
   -webkit-animation-delay: .6s;
+  animation-name: fade00;
+  animation-duration: 2s;
+  animation-iteration-count: infinite;
+  animation-delay: .6s;
 }
 
 @keyframes pulse00 {
@@ -513,6 +613,7 @@
   height: 3rem;
   background-size: 300% 300%;
   cursor: pointer;
+  -webkit-backdrop-filter: blur(1rem);
   backdrop-filter: blur(1rem);
   border-radius: 5rem;
   transition: 0.5s;
@@ -531,6 +632,7 @@
   height: 100%;
   overflow: hidden;
   transition: 0.5s;
+  -webkit-backdrop-filter: blur(1rem);
   backdrop-filter: blur(1rem);
   border-radius: 5rem;
 }
@@ -628,7 +730,6 @@
   from {
     transform: translateY(0);
   }
-
   to {
     transform: translateY(-135rem);
   }
@@ -638,7 +739,6 @@
   from {
     transform: rotate(360deg);
   }
-
   to {
     transform: rotate(0);
   }

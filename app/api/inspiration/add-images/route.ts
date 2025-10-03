@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { neon } from "@/lib/neon"
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert images into the database
-    const { data, error } = await supabase.from("inspiration_images").insert(
+    const { data, error } = await neon.from("inspiration_images").insert(
       imageUrls.map((url) => ({
         category_id: categoryId,
         image_url: url,
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get count of images in this category
-    const { count, error: countError } = await supabase
+    const { count, error: countError } = await neon
       .from("inspiration_images")
       .select("*", { count: "exact" })
       .eq("category_id", categoryId)
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
   try {
     if (categoryId) {
       const id = Number.parseInt(categoryId)
-      const { data, error } = await supabase
+      const { data, error } = await neon
         .from("inspiration_images")
         .select("*")
         .eq("category_id", id)
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all categories with their images
-    const { data: categories, error: categoriesError } = await supabase
+    const { data: categories, error: categoriesError } = await neon
       .from("inspiration_categories")
       .select("id, name")
 
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
 
     // For each category, get its images
     for (const category of categories) {
-      const { data: images, error: imagesError } = await supabase
+      const { data: images, error: imagesError } = await neon
         .from("inspiration_images")
         .select("image_url")
         .eq("category_id", category.id)

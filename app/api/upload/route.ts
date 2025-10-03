@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server"
 import { put } from "@vercel/blob"
-import { supabase } from "@/lib/supabase"
+import { neon } from "@/lib/neon"
 
 export async function POST(request: Request): Promise<NextResponse> {
   try {
     // Verify authentication
     const {
       data: { session },
-    } = await supabase.auth.getSession()
+    } = await neon.auth.getSession()
 
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })

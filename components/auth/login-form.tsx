@@ -5,13 +5,13 @@ import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
+import { Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { toast } from "@/components/ui/use-toast"
-import Link from "next/link"
 import { Icons } from "@/components/icons"
-import { login } from "@/lib/actions/auth"
+import { login } from "@/app/actions/auth"
 
 const formSchema = z.object({
   email: z.string().email({
@@ -38,8 +38,13 @@ export function LoginForm() {
     setIsLoading(true)
 
     try {
+      // Create FormData for server action
+      const formData = new FormData()
+      formData.append("email", values.email)
+      formData.append("password", values.password)
+      
       // Call the server action to login
-      const result = await login(values.email, values.password)
+      const result = await login(formData)
 
       if (result.error) {
         toast({
@@ -94,9 +99,9 @@ export function LoginForm() {
               <FormItem>
                 <div className="flex items-center justify-between">
                   <FormLabel className="text-gold-300">Password</FormLabel>
-                  <Link href="/auth/reset-password" className="text-sm text-gold-500 hover:underline">
+                  <a href="/auth/reset-password" className="text-sm text-gold-500 hover:underline">
                     Forgot password?
-                  </Link>
+                  </a>
                 </div>
                 <FormControl>
                   <Input type="password" {...field} className="bg-black/20 border-gold-500/30 text-white" />
@@ -108,7 +113,7 @@ export function LoginForm() {
           <Button type="submit" className="w-full bg-gold-500 hover:bg-gold-600 text-black" disabled={isLoading}>
             {isLoading ? (
               <>
-                <Icons.spinner className="mr-2 h-4 w-4 animate-spin" /> Please wait
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Please wait
               </>
             ) : (
               "Sign In"

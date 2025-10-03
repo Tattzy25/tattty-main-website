@@ -1,6 +1,6 @@
 "use server"
 
-import { supabase } from "@/lib/supabase"
+import { neon } from "@/lib/neon"
 import { revalidatePath } from "next/cache"
 
 export async function deleteDesign(designId: string) {
@@ -8,14 +8,14 @@ export async function deleteDesign(designId: string) {
     // Get current user
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await neon.auth.getUser()
 
     if (!user) {
       return { success: false, error: "User not authenticated" }
     }
 
     // First, check if the design belongs to the user
-    const { data: design, error: fetchError } = await supabase
+    const { data: design, error: fetchError } = await neon
       .from("tattoo_designs")
       .select("*")
       .eq("id", designId)
@@ -27,7 +27,7 @@ export async function deleteDesign(designId: string) {
     }
 
     // Delete the design
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await neon
       .from("tattoo_designs")
       .delete()
       .eq("id", designId)

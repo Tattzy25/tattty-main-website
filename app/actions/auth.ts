@@ -1,9 +1,39 @@
 "use server"
-import { redirect } from "next/navigation"
-import { z } from "zod"
-import { supabase } from "@/lib/supabase"
-import { sendTransactionalEmail } from "@/lib/mailerlite"
+// import { redirect } from "next/navigation"
+// import { z } from "zod"
+// import { neon } from 
 
+// TODO: Implement authentication with your chosen auth provider
+// Authentication is currently disabled
+
+// Placeholder functions until auth is implemented
+export async function login(formData: FormData) {
+  return { error: "Authentication not implemented yet" }
+}
+
+export async function register(formData: FormData) {
+  return { error: "Authentication not implemented yet" }
+}
+
+export async function resetPassword(formData: FormData) {
+  return { error: "Authentication not implemented yet" }
+}
+
+export async function verifyEmail(token: string) {
+  return { error: "Authentication not implemented yet" }
+}
+
+export async function logout() {
+  // redirect("/")
+  return { error: "Authentication not implemented yet" }
+}
+
+export async function resendVerificationEmail(email: string) {
+  return { error: "Authentication not implemented yet" }
+}
+
+/* 
+// Original auth code - commented out until auth provider is chosen
 // Login validation schema
 const loginSchema = z.object({
   email: z.string().email(),
@@ -42,8 +72,8 @@ export async function login(formData: FormData) {
 
   const { email, password } = validatedFields.data
 
-  // Use Supabase for authentication
-  const { data, error } = await supabase.auth.signInWithPassword({
+  // Auth is disabled - placeholder
+  const { data, error } = await neon.auth.signInWithPassword({
     email,
     password,
   })
@@ -82,8 +112,8 @@ export async function register(formData: FormData) {
 
   const { name, email, password } = validatedFields.data
 
-  // Use Supabase for registration with email confirmation
-  const { data, error } = await supabase.auth.signUp({
+  // Auth is disabled - placeholder
+  const { data, error } = await neon.auth.signUp({
     email,
     password,
     options: {
@@ -102,7 +132,7 @@ export async function register(formData: FormData) {
 
   // Create user profile
   if (data.user) {
-    const { error: profileError } = await supabase.from("user_profiles").insert({
+    const { error: profileError } = await neon.from("user_profiles").insert({
       id: data.user.id,
       display_name: name,
       email: email,
@@ -114,15 +144,8 @@ export async function register(formData: FormData) {
       console.error("Error creating user profile:", profileError)
     }
 
-    // Send welcome email via MailerLite
-    try {
-      await sendTransactionalEmail(email, "welcome_email", {
-        name: name,
-        verification_url: `${process.env.NEXT_PUBLIC_APP_URL}/auth/verify-email?email=${encodeURIComponent(email)}`,
-      })
-    } catch (emailError) {
-      console.error("Error sending welcome email:", emailError)
-    }
+    // TODO: Send welcome email
+    console.log(`User registered: ${email}`);
   }
 
   // Redirect to email verification page
@@ -146,8 +169,8 @@ export async function resetPassword(formData: FormData) {
 
   const { email } = validatedFields.data
 
-  // Use Supabase for password reset
-  const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+  // Use neon for password reset
+  const { data, error } = await neon.auth.resetPasswordForEmail(email, {
     redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password/confirm`,
   })
 
@@ -162,8 +185,8 @@ export async function resetPassword(formData: FormData) {
 
 export async function verifyEmail(token: string) {
   try {
-    // Verify the token with Supabase
-    const { error } = await supabase.auth.verifyOtp({
+    // Verify the token with neon
+    const { error } = await neon.auth.verifyOtp({
       token_hash: token,
       type: "email",
     })
@@ -184,8 +207,8 @@ export async function verifyEmail(token: string) {
 }
 
 export async function logout() {
-  // Use Supabase for logout
-  await supabase.auth.signOut()
+  // Use neon for logout
+  await neon.auth.signOut()
 
   // Redirect to home page
   redirect("/")
@@ -193,7 +216,7 @@ export async function logout() {
 
 export async function resendVerificationEmail(email: string) {
   try {
-    const { data, error } = await supabase.auth.resend({
+    const { data, error } = await neon.auth.resend({
       type: "signup",
       email,
       options: {
@@ -215,3 +238,4 @@ export async function resendVerificationEmail(email: string) {
     }
   }
 }
+*/

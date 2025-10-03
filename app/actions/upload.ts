@@ -1,23 +1,17 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { supabase } from "@/lib/supabase"
 import { uploadToBlob, uploadBase64ToBlob, deleteFromBlob } from "@/lib/blob-storage"
+import { getSqlClient, insert, deleteRecord, select, upsert } from "@/lib/neon"
 
 /**
  * Uploads a tattoo design image and saves it to the database
  */
 export async function uploadTattooDesign(formData: FormData) {
   try {
-    // Get the current user
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-    if (!session) {
-      return { success: false, error: "Unauthorized" }
-    }
-
-    const userId = session.user.id
+    // TODO: Add authentication check
+    const userId = "temp-user-id" // Replace with actual user authentication
+    
     const title = formData.get("title") as string
     const description = formData.get("description") as string
     const prompt = formData.get("prompt") as string
@@ -31,24 +25,22 @@ export async function uploadTattooDesign(formData: FormData) {
     }
 
     // Save to database
-    const { data, error } = await supabase
-      .from("tattoo_designs")
-      .insert({
-        user_id: userId,
-        title: title || "Untitled Design",
-        description,
-        prompt,
-        style,
-        image_url: uploadResult.url,
-        image_path: uploadResult.path,
-        is_ai_generated: !!prompt,
-      })
-      .select()
+    const { data, error } = await insert("tattoo_designs", {
+      user_id: userId,
+      title: title || "Untitled Design",
+      description,
+      prompt,
+      style,
+      image_url: uploadResult.url,
+      is_public: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
 
     if (error) {
       // Clean up the uploaded blob if database insert fails
       await deleteFromBlob(uploadResult.path)
-      return { success: false, error: error.message }
+      return { success: false, error: error.message || "Database error" }
     }
 
     revalidatePath("/dashboard/designs")
@@ -67,15 +59,8 @@ export async function uploadTattooDesign(formData: FormData) {
  */
 export async function uploadAIGeneratedDesign(base64Image: string, title: string, prompt: string, style: string) {
   try {
-    // Get the current user
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-    if (!session) {
-      return { success: false, error: "Unauthorized" }
-    }
-
-    const userId = session.user.id
+    // TODO: Add authentication check
+    const userId = "temp-user-id" // Replace with actual user authentication
 
     // Upload image to Blob
     const uploadResult = await uploadBase64ToBlob(base64Image, "ai-generated")
@@ -84,23 +69,21 @@ export async function uploadAIGeneratedDesign(base64Image: string, title: string
     }
 
     // Save to database
-    const { data, error } = await supabase
-      .from("tattoo_designs")
-      .insert({
-        user_id: userId,
-        title: title || "AI Generated Design",
-        prompt,
-        style,
-        image_url: uploadResult.url,
-        image_path: uploadResult.path,
-        is_ai_generated: true,
-      })
-      .select()
+    const { data, error } = await insert("tattoo_designs", {
+      user_id: userId,
+      title: title || "AI Generated Design",
+      prompt,
+      style,
+      image_url: uploadResult.url,
+      is_public: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
 
     if (error) {
       // Clean up the uploaded blob if database insert fails
       await deleteFromBlob(uploadResult.path)
-      return { success: false, error: error.message }
+      return { success: false, error: error.message || "Database error" }
     }
 
     revalidatePath("/dashboard/designs")
@@ -116,45 +99,41 @@ export async function uploadAIGeneratedDesign(base64Image: string, title: string
 
 /**
  * Deletes a tattoo design and its associated image
- * This function is exported as deleteDesign for backward compatibility
  */
 export async function deleteTattooDesign(designId: string) {
   try {
-    // Get the current user
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-    if (!session) {
-      return { success: false, error: "Unauthorized" }
-    }
-
-    const userId = session.user.id
+    // TODO: Add authentication check
+    const userId = "temp-user-id" // Replace with actual user authentication
 
     // Get the design to check ownership and get the image path
-    const { data: design, error: fetchError } = await supabase
-      .from("tattoo_designs")
-      .select("*")
-      .eq("id", designId)
-      .eq("user_id", userId)
-      .single()
+    const { data: designs, error: fetchError } = await select(
+      "tattoo_designs", 
+      "*", 
+      "id = $1 AND user_id = $2", 
+      [designId, userId]
+    )
 
+    const design = designs?.[0]
     if (fetchError || !design) {
       return { success: false, error: "Design not found or access denied" }
     }
 
     // Delete from database
-    const { error: deleteError } = await supabase
-      .from("tattoo_designs")
-      .delete()
-      .eq("id", designId)
-      .eq("user_id", userId)
+    const { error: deleteError } = await deleteRecord(
+      "tattoo_designs", 
+      "id = $1 AND user_id = $2", 
+      [designId, userId]
+    )
 
     if (deleteError) {
-      return { success: false, error: deleteError.message }
+      return { success: false, error: deleteError.message || "Database error" }
     }
 
-    // The trigger we created will handle adding the image to the deleted_images table
-    // for later cleanup by our background job
+    // TODO: Clean up blob storage - add to cleanup queue
+    if (design.image_url) {
+      // For now, just log - implement cleanup job later
+      console.log("Image to cleanup:", design.image_url)
+    }
 
     revalidatePath("/dashboard/designs")
     return { success: true }
@@ -175,15 +154,8 @@ export const deleteDesign = deleteTattooDesign
  */
 export async function updateProfileAvatar(formData: FormData) {
   try {
-    // Get the current user
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-    if (!session) {
-      return { success: false, error: "Unauthorized" }
-    }
-
-    const userId = session.user.id
+    // TODO: Add authentication check
+    const userId = "temp-user-id" // Replace with actual user authentication
     const file = formData.get("avatar") as File
 
     // Upload image to Blob
@@ -193,102 +165,31 @@ export async function updateProfileAvatar(formData: FormData) {
     }
 
     // Get current profile to check if we need to delete an old avatar
-    const { data: profile } = await supabase.from("user_profiles").select("avatar_path").eq("id", userId).single()
+    const { data: profiles } = await select("user_profiles", "avatar_url", "id = $1", [userId])
+    const profile = profiles?.[0]
 
-    // Delete old avatar if it exists
-    if (profile?.avatar_path) {
-      await deleteFromBlob(profile.avatar_path)
+    // TODO: Delete old avatar if it exists
+    if (profile?.avatar_url) {
+      console.log("Old avatar to cleanup:", profile.avatar_url)
     }
 
     // Update profile
-    const { error } = await supabase.from("user_profiles").upsert({
+    const { error } = await upsert("user_profiles", {
       id: userId,
       avatar_url: uploadResult.url,
-      avatar_path: uploadResult.path,
       updated_at: new Date().toISOString(),
     })
 
     if (error) {
       // Clean up the uploaded blob if database update fails
       await deleteFromBlob(uploadResult.path)
-      return { success: false, error: error.message }
+      return { success: false, error: error.message || "Database error" }
     }
 
     revalidatePath("/dashboard/settings")
     return { success: true, url: uploadResult.url }
   } catch (error) {
     console.error("Error updating profile avatar:", error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error during upload",
-    }
-  }
-}
-
-/**
- * Uploads an artist portfolio image
- */
-export async function uploadPortfolioImage(formData: FormData) {
-  try {
-    // Get the current user
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-    if (!session) {
-      return { success: false, error: "Unauthorized" }
-    }
-
-    const userId = session.user.id
-    const title = formData.get("title") as string
-    const description = formData.get("description") as string
-    const style = formData.get("style") as string
-    const tags = formData.get("tags") as string
-    const file = formData.get("image") as File
-
-    // Get artist profile
-    const { data: artistProfile, error: profileError } = await supabase
-      .from("artist_profiles")
-      .select("id")
-      .eq("id", userId)
-      .single()
-
-    if (profileError || !artistProfile) {
-      return { success: false, error: "Artist profile not found" }
-    }
-
-    // Upload image to Blob
-    const uploadResult = await uploadToBlob(file, "portfolio")
-    if (!uploadResult.success) {
-      return { success: false, error: uploadResult.error }
-    }
-
-    // Parse tags
-    const tagArray = tags ? tags.split(",").map((tag) => tag.trim()) : []
-
-    // Save to database
-    const { data, error } = await supabase
-      .from("artist_portfolios")
-      .insert({
-        artist_id: artistProfile.id,
-        title: title || "Untitled Work",
-        description,
-        style,
-        tags: tagArray,
-        image_url: uploadResult.url,
-        image_path: uploadResult.path,
-      })
-      .select()
-
-    if (error) {
-      // Clean up the uploaded blob if database insert fails
-      await deleteFromBlob(uploadResult.path)
-      return { success: false, error: error.message }
-    }
-
-    revalidatePath("/artist-dashboard")
-    return { success: true, data }
-  } catch (error) {
-    console.error("Error uploading portfolio image:", error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error during upload",

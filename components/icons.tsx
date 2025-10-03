@@ -50,6 +50,9 @@ import {
   Upload,
   Share2,
   Save,
+  Search,
+  Award,
+  Github,
 } from "lucide-react"
 
 export const Icons = {
@@ -88,6 +91,7 @@ export const Icons = {
       />
     </svg>
   ),
+  gitHub: Github,
   facebook: Facebook,
   check: ({ ...props }) => (
     <svg
@@ -157,4 +161,6 @@ export const Icons = {
   brain: Brain,
   zap: Zap,
   ellipsisHorizontal: MoreHorizontal,
+  search: Search,
+  award: Award,
 }

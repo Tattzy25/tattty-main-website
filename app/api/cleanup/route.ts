@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { deleteFromBlob } from "@/lib/blob-storage"
-import { supabase } from "@/lib/supabase"
+import { neon } from "@/lib/neon"
 
 // This endpoint should be called by a cron job
 export async function POST(request: Request): Promise<NextResponse> {
@@ -14,7 +14,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
 
     // Get unprocessed deleted images
-    const { data: deletedImages, error } = await supabase
+    const { data: deletedImages, error } = await neon
       .from("deleted_images")
       .select("*")
       .eq("processed", false)
@@ -36,7 +36,7 @@ export async function POST(request: Request): Promise<NextResponse> {
           await deleteFromBlob(image.image_path)
 
           // Mark as processed
-          await supabase.from("deleted_images").update({ processed: true }).eq("id", image.id)
+          await neon.from("deleted_images").update({ processed: true }).eq("id", image.id)
 
           return { id: image.id, success: true }
         } catch (error) {

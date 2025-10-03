@@ -11,15 +11,9 @@ import { Input } from "@/components/ui/input"
 import { toast } from "@/components/ui/use-toast"
 import { Icons } from "@/components/icons"
 
-const formSchema = z.object({
-  name: z.string().min(2, {
-    message: "Name must be at least 2 characters.",
-  }),
+const otpSchema = z.object({
   email: z.string().email({
     message: "Please enter a valid email address.",
-  }),
-  password: z.string().min(8, {
-    message: "Password must be at least 8 characters.",
   }),
 })
 
@@ -27,30 +21,60 @@ export function RegisterForm() {
   const router = useRouter()
   const [isLoading, setIsLoading] = React.useState<boolean>(false)
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof otpSchema>>({
+    resolver: zodResolver(otpSchema),
     defaultValues: {
-      name: "",
       email: "",
-      password: "",
     },
   })
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof otpSchema>) {
     setIsLoading(true)
 
     try {
-      // Here we would normally call a server action to register the user
-      // For now, we'll simulate a successful registration
-      console.log(values)
+      // TODO: Send OTP to email
+      toast({
+        title: "Check your email",
+        description: "We've sent you a one-time password to create your account.",
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
-      setTimeout(() => {
-        toast({
-          title: "Account created!",
-          description: "Please check your email to verify your account.",
-        })
-        router.push("/auth/verify-email")
-      }, 1000)
+  async function signUpWithGoogle() {
+    setIsLoading(true)
+    try {
+      // TODO: Implement Google OAuth
+      toast({
+        title: "Coming soon",
+        description: "Google sign-up will be available shortly.",
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  async function signUpWithGitHub() {
+    setIsLoading(true)
+    try {
+      // TODO: Implement GitHub OAuth
+      toast({
+        title: "Coming soon",
+        description: "GitHub sign-up will be available shortly.",
+      })
     } catch (error) {
       toast({
         title: "Error",
@@ -68,19 +92,6 @@ export function RegisterForm() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <FormField
             control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-gold-300">Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="John Doe" {...field} className="bg-black/20 border-gold-500/30 text-white" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
             name="email"
             render={({ field }) => (
               <FormItem>
@@ -96,26 +107,13 @@ export function RegisterForm() {
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-gold-300">Password</FormLabel>
-                <FormControl>
-                  <Input type="password" {...field} className="bg-black/20 border-gold-500/30 text-white" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
           <Button type="submit" className="w-full bg-gold-500 hover:bg-gold-600 text-black" disabled={isLoading}>
             {isLoading ? (
               <>
                 <Icons.spinner className="mr-2 h-4 w-4 animate-spin" /> Please wait
               </>
             ) : (
-              "Create Account"
+              "Send One-Time Password"
             )}
           </Button>
         </form>
@@ -128,15 +126,26 @@ export function RegisterForm() {
           <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
         </div>
       </div>
-      <div className="grid grid-cols-1 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <Button
           variant="outline"
           type="button"
           disabled={isLoading}
-          className="border-gold-500/30 hover:bg-gold-500/10 w-full"
+          onClick={signUpWithGoogle}
+          className="border-gold-500/30 hover:bg-gold-500/10"
         >
-          <Icons.facebook className="mr-2 h-4 w-4" />
-          Facebook
+          <Icons.google className="mr-2 h-4 w-4" />
+          Google
+        </Button>
+        <Button
+          variant="outline"
+          type="button"
+          disabled={isLoading}
+          onClick={signUpWithGitHub}
+          className="border-gold-500/30 hover:bg-gold-500/10"
+        >
+          <Icons.gitHub className="mr-2 h-4 w-4" />
+          GitHub
         </Button>
       </div>
     </div>
