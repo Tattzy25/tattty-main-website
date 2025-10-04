@@ -8,6 +8,7 @@ import { GlassTextarea } from "@/components/ui/glass-textarea"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, ArrowRight, Sparkles, Heart, MapPin, Users, Calendar, Building, Palette, Music, Camera, Coffee, Car, Home, Send, Mic, Clock, SkipForward } from "lucide-react"
+import { Sketchpad } from "@/components/sketchpad"
 import "./inked.css"
 
 // Animation timing constants (in milliseconds)
@@ -404,10 +405,49 @@ export default function InkdPage() {
           <div className="container mx-auto px-4 text-center">
             {/* Show headline for Questions 1-6 and Card 7 */}
             {((currentStep < cardData.length && cardData[currentStep].title) || isCard7) && (
-              <h1 className={`text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight transition-opacity duration-300 ${
+              <h1 className={`text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight transition-opacity duration-300 relative ${
                 isContentFading ? 'opacity-0' : 'opacity-100'
-              }`} style={{ fontFamily: 'Audiowide, sans-serif' }}>
-                <span className="bg-gradient-to-r from-red-500 via-amber-400 to-purple-600 bg-clip-text text-transparent">
+              }`} style={{ 
+                fontFamily: 'Audiowide, sans-serif'
+              }}>
+                {/* Black shadow layers behind */}
+                <span className="absolute inset-0" style={{ 
+                  color: '#000000',
+                  transform: 'translate(3px, 3px)',
+                  zIndex: -5
+                }}>
+                  {isCard7 ? card7Data.title : cardData[currentStep].title}
+                </span>
+                <span className="absolute inset-0" style={{ 
+                  color: '#000000',
+                  transform: 'translate(6px, 6px)',
+                  zIndex: -4
+                }}>
+                  {isCard7 ? card7Data.title : cardData[currentStep].title}
+                </span>
+                <span className="absolute inset-0" style={{ 
+                  color: 'rgba(0,0,0,0.8)',
+                  transform: 'translate(9px, 9px)',
+                  zIndex: -3
+                }}>
+                  {isCard7 ? card7Data.title : cardData[currentStep].title}
+                </span>
+                <span className="absolute inset-0" style={{ 
+                  color: 'rgba(0,0,0,0.6)',
+                  transform: 'translate(12px, 12px)',
+                  zIndex: -2
+                }}>
+                  {isCard7 ? card7Data.title : cardData[currentStep].title}
+                </span>
+                <span className="absolute inset-0" style={{ 
+                  color: 'rgba(0,0,0,0.4)',
+                  transform: 'translate(15px, 15px)',
+                  zIndex: -1
+                }}>
+                  {isCard7 ? card7Data.title : cardData[currentStep].title}
+                </span>
+                {/* Gradient text on top */}
+                <span className="bg-gradient-to-r from-red-500 via-amber-400 to-purple-600 bg-clip-text text-transparent relative z-10">
                   {isCard7 ? card7Data.title : cardData[currentStep].title}
                 </span>
               </h1>
@@ -415,20 +455,12 @@ export default function InkdPage() {
           </div>
         </div>
 
-        <div className="relative min-h-screen flex flex-col lg:flex-row pt-8">
+        <div className="relative min-h-screen flex flex-col lg:flex-row pt-8 pb-32">
           {/* Left Side - Card Area - MOBILE: Full Width, DESKTOP: 50% */}
-          <div className="w-full lg:w-1/2 flex items-center justify-center p-4">
-            <GlassCard size="xl" className="relative">
-              
-              {/* Skip Button - Top Right Corner */}
-              <button
-                onClick={handleSkip}
-                className="absolute top-4 right-4 z-50 group flex items-center gap-1 px-3 py-1.5 rounded-full bg-orange-500/20 hover:bg-orange-500/30 backdrop-blur-sm border-2 border-orange-500/50 hover:border-orange-500 transition-all duration-200"
-                title="Skip this question"
-              >
-                <span className="text-sm font-medium text-orange-300 group-hover:text-orange-100 transition-colors">Skip</span>
-                <SkipForward className="w-4 h-4 text-orange-300 group-hover:text-orange-100 transition-colors" />
-              </button>
+          <div className="w-full lg:w-[55%] flex items-center justify-center p-4 lg:justify-end lg:pr-8">
+            <GlassCard size="xl" className="relative max-w-2xl w-full mx-auto lg:mx-0 rounded-[2.5rem]" style={{
+              boxShadow: '0 25px 50px rgba(139, 92, 246, 0.4), 0 15px 30px rgba(0, 0, 0, 0.6), 0 35px 70px rgba(138, 43, 226, 0.3)'
+            }}>
 
               <GlassCardHeader className={`text-center space-y-4 pb-8 transition-opacity duration-300 ${
                 isContentFading ? 'opacity-0' : 'opacity-100'
@@ -584,9 +616,14 @@ export default function InkdPage() {
                 <ArrowLeft className="w-4 h-4" />
                 Previous
               </Button>
-              <span className="text-sm text-muted-foreground self-center">
-                {currentStep + 1} of {cardData.length + 3}
-              </span>
+              <Button 
+                variant="ghost"
+                onClick={handleSkip}
+                className="flex items-center gap-2 hover:bg-muted/50 text-white/70 hover:text-orange-400 transition-colors"
+              >
+                Skip
+                <SkipForward className="w-4 h-4" />
+              </Button>
               <Button 
                 onClick={handleNext}
                 disabled={!sentMessages[currentStep]}
@@ -604,15 +641,8 @@ export default function InkdPage() {
         </GlassCard>
         </div>
         
-        {/* Right Side - Sketch Pad / Carousel Area - MOBILE: Hidden, DESKTOP: 50% */}
-        <div className="hidden lg:flex lg:w-1/2 items-center justify-center p-4">
-          <div className={`text-white/50 text-center transition-opacity duration-500 ${
-            isContentFading ? 'opacity-0' : 'opacity-100'
-          }`}>
-            <p>Sketch Pad Area</p>
-            <p className="text-sm">(Coming Soon)</p>
-          </div>
-        </div>
+        {/* Right Side - Sketchpad Component */}
+        <Sketchpad />
         </div>
       </>
 
