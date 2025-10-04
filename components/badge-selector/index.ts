@@ -1,0 +1,1 @@
+export { BadgeSelector } from './BadgeSelector';

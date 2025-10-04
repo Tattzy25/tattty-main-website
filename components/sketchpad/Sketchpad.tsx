@@ -1,10 +1,21 @@
 import React from 'react'
 import './sketchpad.css'
 
-export function Sketchpad() {
+interface SketchpadProps {
+  showCarousels?: boolean  // Kept for backwards compatibility but not used
+  selectedStyleImages?: string[]  // Kept for backwards compatibility but not used
+  onStyleSelect?: (url: string) => void  // Kept for backwards compatibility but not used
+}
+
+export function Sketchpad({
+  showCarousels = false,
+  selectedStyleImages = [],
+  onStyleSelect = () => {}
+}: SketchpadProps) {
   return (
-    <div className="hidden lg:flex lg:w-1/2 items-center justify-center p-4" style={{ perspective: '2000px' }}>
-      <div className="relative w-[480px] h-[480px] rounded-3xl" style={{ 
+    <div className="hidden lg:flex lg:w-1/2 items-center justify-center p-4 transition-all duration-500" style={{ perspective: '2000px' }}>
+      {/* Sketchpad with Robot Hand */}
+      <div className="relative w-[480px] h-[480px] rounded-3xl sketchpad-fade" style={{ 
         transform: 'rotateX(55deg) rotateY(-12deg) rotateZ(-15deg)', 
         transformStyle: 'preserve-3d',
         boxShadow: '0 25px 50px rgba(0, 255, 170, 0.5), 0 15px 30px rgba(139, 92, 246, 0.4), 0 35px 70px rgba(0, 255, 170, 0.3), 0 45px 90px rgba(138, 43, 226, 0.3)'

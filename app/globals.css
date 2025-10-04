@@ -187,6 +187,13 @@
   background: transparent;
 }
 
+/* Prevent horizontal touch panning; allows only vertical pan on mobile. */
+.no-horizontal-pan {
+  -ms-touch-action: pan-y; /* IE/Edge */
+  touch-action: pan-y;
+  overscroll-behavior-x: none; /* Prevent scroll chaining horizontally */
+}
+
 /* Anti-screenshot styles */
 .screenshot-disabled {
   -webkit-user-select: none;

@@ -14,7 +14,13 @@ export default function ClientLayout({
 }) {
   return (
     <html lang="en">
-      <body>
+      {/*
+        Apply overflow-x-hidden to prevent any horizontal page shifting/scrolling
+        and touch-action: pan-y to allow only vertical touch panning on mobile.
+        This keeps the layout mobile-first and ensures the page grows downward
+        without moving left/right.
+      */}
+      <body className="overflow-x-hidden min-h-screen no-horizontal-pan">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           {children}
           <Toaster />
