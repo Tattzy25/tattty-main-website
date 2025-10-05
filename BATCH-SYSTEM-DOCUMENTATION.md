@@ -1,7 +1,21 @@
 # Question Batch System Documentation
 
 ## Overview
-The question batch system has been refactored to use unique, explicit batch IDs instead of dynamic braiding logic. This makes the system easier to understand, maintain, and debug.
+The question batch system uses a **database-driven approach** to manage question rotation. Batch assignments are stored in the `batch_assignments` table, ensuring consistent ordering and making it easy to track which questions appear in which batches.
+
+## Architecture
+
+### Database Tables
+1. **`questions`** - Stores all question data (text, options, metadata)
+2. **`batch_assignments`** - Junction table mapping questions to batches with position ordering
+3. **`question_sets`** - Defines question sets (Set 1, Set 2, etc.)
+
+### API Flow
+1. User loads page → Frontend calls `/api/questions`
+2. API randomly selects one of 4 batch IDs
+3. Database query JOINs `questions` with `batch_assignments` 
+4. Results filtered by `batch_id` and ordered by `position`
+5. Returns 6 questions in exact braided order for that batch
 
 ## Batch Structure
 
