@@ -8,7 +8,10 @@ import { WelcomeScreen } from "@/components/welcome-screen"
 import { GenerationResults } from "@/components/generation-results"
 import { DynamicHeadline } from "@/components/dynamic-headline"
 import { RightSidePanel } from "@/components/right-side-panel"
+import { ErrorPopup } from "@/components/error-popup"
+import { PurpleLoading } from "@/components/purple-loading"
 import { generateAIFollowUpQuestion } from "@/lib/ai-logic"
+import { createFinalQuestion } from "@/data/tattty-final-q"
 import { MessageCircle } from "lucide-react"
 import { useQuestionnaireFlow } from "@/hooks/use-questionnaire-flow"
 import { useImageLoading } from "@/hooks/use-image-loading"
@@ -22,7 +25,7 @@ export default function InkdPage() {
   const [card7Categories, setCard7Categories] = useState<any[]>([])
   const [finalQuestion, setFinalQuestion] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   // Hook 1: Questionnaire Flow (all state + navigation + handlers) - MUST be called before any conditional returns
   const {
@@ -58,12 +61,16 @@ export default function InkdPage() {
   // Hook 2: Image Loading (Card 7 images)
   const { categoryImages, loading: imagesLoading } = useImageLoading()
 
-  // Hook 3: Generation Flow (loading + results)
+  // Hook 3: Generation Flow (loading + results + errors)
   const {
     isGenerating,
     generatedImages,
     showResults,
+    errorMessage,
+    retryCount,
     handleBuildClick,
+    handleRetry,
+    handleCloseError,
     handleDownload,
     handleEmail,
     handleSave,
@@ -76,7 +83,7 @@ export default function InkdPage() {
     const loadData = async () => {
       try {
         setIsLoading(true)
-        setError(null)
+        setLoadError(null)
         
         // Fetch questions from database
         const questionsResponse = await fetch('/api/questions')
@@ -133,20 +140,14 @@ export default function InkdPage() {
         setCard7Data(transformedCard7Data)
         setCard7Categories(['style', 'color', 'size', 'placement'])
 
-        // Create final question (this could also come from database)
-        setFinalQuestion({
-          id: 'final',
-          title: 'Final Step',
-          questionText: 'Ready to create your tattoo?',
-          displayOrder: 7,
-          questionType: 'final',
-          isRequired: true
-        })
+        // Card 8: Use proper module instead of hard-coding
+        const card8 = createFinalQuestion()
+        setFinalQuestion(card8)
 
       } catch (err) {
         console.error('Error loading data:', err)
         const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred while loading questionnaire data.'
-        setError(errorMessage)
+        setLoadError(errorMessage)
       } finally {
         setIsLoading(false)
       }
@@ -157,19 +158,21 @@ export default function InkdPage() {
 
   // Calculate derived values that hooks depend on (MUST be before conditional returns)
   const currentCard = cardData[currentStep] || null
-  const IconComponent = currentCard?.icon
+  const IconComponent = currentCard?.icon || null
   const isCard7 = cardData.length > 0 && currentStep === cardData.length // Card 7 is right after question 6
   const isCard8 = cardData.length > 0 && currentStep === cardData.length + 1 // Card 8 is after Card 7
 
   // Generate AI follow-up question when user reaches Card 8 (MUST be before conditional returns)
   useEffect(() => {
     if (isCard8 && !aiFollowUpQuestion) {
-      const question = generateAIFollowUpQuestion(
-        sentMessages,
-        selectedImages,
-        cardData.length
-      )
-      setAiFollowUpQuestion(question)
+      // Call async function
+      const loadFollowUpQuestion = async () => {
+        // Create a summary string of user responses for AI context
+        const userContext = `User responses: ${sentMessages.join(', ')}. Selected images: ${Object.keys(selectedImages).length} categories selected.`
+        const question = await generateAIFollowUpQuestion(userContext)
+        setAiFollowUpQuestion(question)
+      }
+      loadFollowUpQuestion()
     }
   }, [isCard8, aiFollowUpQuestion, sentMessages, selectedImages, cardData.length])
 
@@ -177,18 +180,26 @@ export default function InkdPage() {
   const card7DataFormatted = card7Data && Object.keys(card7Data).length > 0 ? {
     id: "style-selection",
     cardType: "style" as const,
-    title: card7Data.title || "Choose Your Style",
-    subtitle: card7Data.subtitle || "Select the tattoo style that speaks to you",
-    description: card7Data.description || "Pick from our curated collection of tattoo styles",
-    placeholder: card7Data.placeholder || "Select a style...",
+    title: card7Data.title,
+    subtitle: card7Data.subtitle,
+    description: card7Data.description,
+    placeholder: card7Data.placeholder,
     options: card7Data.options || [],
     icon: null,
   } : null
 
   // Dynamic Card 8 data with AI-generated question
   const card8Data = finalQuestion ? {
-    ...finalQuestion,
-    questionText: aiFollowUpQuestion || finalQuestion.questionText
+    id: 'final',
+    title: finalQuestion.title,
+    questionText: aiFollowUpQuestion,
+    subtitle: aiFollowUpQuestion,
+    description: finalQuestion.description,
+    placeholder: finalQuestion.placeholder,
+    icon: finalQuestion.icon,
+    options: finalQuestion.options || [],
+    questionType: 'final',
+    isRequired: false
   } : null
 
   // Format card7 categories for the components
@@ -208,33 +219,15 @@ export default function InkdPage() {
     return (
       <MainLayout>
         <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-            <p>Loading questionnaire...</p>
-          </div>
+          <PurpleLoading size={150} speed={2.5} />
         </div>
       </MainLayout>
     )
   }
 
-  // Show error state
-  if (error) {
-    return (
-      <MainLayout>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center text-red-600">
-            <p className="text-xl font-semibold mb-2">Error Loading Data</p>
-            <p>{error}</p>
-            <button 
-              onClick={() => window.location.reload()} 
-              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              Retry
-            </button>
-          </div>
-        </div>
-      </MainLayout>
-    )
+  // Show error state with retry
+  if (loadError) {
+    throw new Error(loadError)
   }
 
   // Don't render until we have the data
@@ -269,7 +262,7 @@ export default function InkdPage() {
           {/* Hero Headline - Dynamic based on current question */}
           {((currentStep < cardData.length && cardData[currentStep].pageHeadline) || isCard7 || isCard8) && (
             <DynamicHeadline 
-              title={isCard7 ? (card7DataFormatted?.title || "Choose Your Style") : isCard8 ? (card8Data?.title || "Final Step") : cardData[currentStep].pageHeadline}
+              title={isCard7 ? card7DataFormatted?.title : isCard8 ? card8Data?.title : cardData[currentStep].pageHeadline}
               isContentFading={isContentFading}
             />
           )}
@@ -282,6 +275,7 @@ export default function InkdPage() {
             isCard7={isCard7}
             isCard8={isCard8}
             isContentFading={isContentFading}
+            isLoadingAIQuestion={isCard8 && !aiFollowUpQuestion}
             sentMessages={sentMessages}
             showMessageAnimation={showMessageAnimation}
             selectedStyleImages={selectedImages}
@@ -324,6 +318,18 @@ export default function InkdPage() {
         onStartJourney={handleStartJourney}
       />
 
+      {/* ERROR POPUP - User-friendly error with retry */}
+      {errorMessage && (
+        <ErrorPopup
+          message={errorMessage}
+          onRetry={handleRetry}
+          onClose={handleCloseError}
+          retryCount={retryCount}
+        />
+      )}
+
     </MainLayout>
+  )
+}
   )
 }

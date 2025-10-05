@@ -43,12 +43,7 @@ export default function Nav() {
         <div className="flex justify-between h-16 items-center">
           <div className="flex items-center">
             <Link href="/" className="flex items-center gap-2">
-              <div className="relative w-8 h-8">
-                <div className="absolute inset-0 text-red-500 animate-pulse">🔥</div>
-                <div className="absolute inset-0 text-amber-500 animate-pulse" style={{ animationDelay: "0.5s" }}>
-                  🔥
-                </div>
-              </div>
+              <div className="text-2xl">🔥</div>
               <span className="text-2xl font-bold bg-gradient-to-r from-red-500 via-amber-400 to-purple-600 bg-clip-text text-transparent">
                 TATTTY
               </span>

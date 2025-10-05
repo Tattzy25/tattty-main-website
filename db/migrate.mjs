@@ -25,7 +25,7 @@ async function runMigration() {
     console.log('✅ Connected to Neon database\n');
     
     // Read the SQL file
-    const schemaPath = path.join(__dirname, 'complete-schema.sql');
+    const schemaPath = path.join(__dirname, 'user-session-migration.sql');
     const schema = fs.readFileSync(schemaPath, 'utf8');
     
     console.log('📝 Executing complete schema...\n');

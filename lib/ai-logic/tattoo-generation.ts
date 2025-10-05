@@ -1,44 +1,99 @@
 /**
  * AI Logic for Tattoo Generation
  * Handles follow-up question generation and tattoo image generation
+ * Ful    // Step 3: Generate images with Stability AI server action
+    console.log("🖼️ [STABILITY] Generating tattoo images...")
+    
+    const imageResult = await generateTattooImagePairAction(
+      promptResponse.positivePrompt,
+      promptResponse.negativePrompt,
+      "sd3.5-large" // Use best model for now
+    )
+
+    if (!imageResult.success) {
+      throw new Error(imageResult.error)
+    }
+
+    const [colorImage, stencilImage] = imageResult.images
+ * 
+ * NOTE: This file is CLIENT-SIDE safe. All API calls go through server actions.
  */
 
 import type { GeneratedImage } from "@/components/generation-results"
+import type { UserAnswers } from "./groq-prompts"
+import { logError } from "@/lib/error-logging"
+import { generateFollowUpQuestionAction, generateFinalPromptsAction } from "@/app/actions/groq"
+import { generateTattooImagePairAction } from "@/app/actions/stability"
 
 /**
  * Generates personalized AI follow-up question based on user responses
- * Analyzes Cards 1-7 responses and creates contextual follow-up questions
+ * Uses session data from database instead of hook state
  */
-export function generateAIFollowUpQuestion(
-  sentMessages: string[],
-  selectedImages: any,
-  cardDataLength: number
-): string {
-  // Analyze user responses to generate contextual question
-  const hasStyleSelections = Object.keys(selectedImages).some(
-    key => selectedImages[key] && selectedImages[key].length > 0
-  )
+export async function generateAIFollowUpQuestion(
+  sessionToken: string
+): Promise<string> {
+  console.log("🤔 [AI] Generating follow-up question from session data...")
   
-  if (hasStyleSelections) {
-    return "Based on your style selections, is there anything specific you'd like us to know about placement, size, or personal meaning of your tattoo?"
+  try {
+    // Fetch complete session summary from database
+    const sessionResponse = await fetch(`/api/session/summary/${sessionToken}`)
+    if (!sessionResponse.ok) {
+      throw new Error(`Failed to fetch session: ${sessionResponse.status}`)
+    }
+    
+    const sessionData = await sessionResponse.json()
+    
+    // Build UserAnswers from session data
+    const answers: UserAnswers = {
+      card1: sessionData.answers[0]?.answer_text || "",
+      card2: sessionData.answers[1]?.answer_text || "",
+      card3: sessionData.answers[2]?.answer_text || "",
+      card4: sessionData.answers[3]?.answer_text || "",
+      card5: sessionData.answers[4]?.answer_text || "",
+      card6: sessionData.answers[5]?.answer_text || "",
+      card7: formatStyleSelections(sessionData.styleSelections),
+    }
+    
+    // Call Groq server action to generate intelligent follow-up
+    const result = await generateFollowUpQuestionAction(answers)
+    
+    if (!result.success) {
+      throw new Error(result.error)
+    }
+    
+    return result.question
+    
+  } catch (error) {
+    console.error("❌ [AI] Failed to generate follow-up question:", error)
+    
+    logError(error, "AI_GENERATION", {
+      operation: "generateAIFollowUpQuestion",
+      sessionToken
+    })
+    throw error
   }
+}
+
+/**
+ * Format style selections from session into Card 7 text
+ */
+function formatStyleSelections(styleSelections: any[]): string {
+  if (!styleSelections || styleSelections.length === 0) return ""
   
-  if (sentMessages.length > 0) {
-    return "Looking at what you've shared so far, are there any additional details or reference images that would help bring your vision to life?"
-  }
-  
-  return "Is there anything else you'd like to share about your tattoo vision? Any reference images or specific details we should know?"
+  return styleSelections
+    .map(selection => `${selection.category}: ${selection.selected_option_name}`)
+    .join(", ")
 }
 
 /**
  * Generates tattoo images using AI
- * Integrates with AI orchestration system to generate tattoo designs
+ * Full pipeline: User responses → Groq prompts → Stability AI generation
  * 
  * @param responses - User text responses from Cards 1-6
  * @param selectedImages - Visual selections from Card 7 (style, color, size, placement)
  * @param uploadedImages - Reference images uploaded on Card 8
  * @param additionalNotes - Optional text from Card 8
- * @returns Promise resolving to 4 generated images (2 color + 2 stencil)
+ * @returns Promise resolving to 2 generated images (1 color + 1 stencil)
  */
 export async function generateTattooImages(
   responses: string[],
@@ -46,64 +101,128 @@ export async function generateTattooImages(
   uploadedImages: File[],
   additionalNotes?: string
 ): Promise<GeneratedImage[]> {
-  console.log('🎨 AI Generation started with:', {
+  console.log("🎨 [AI] Starting tattoo generation pipeline...")
+  console.log("📊 Input:", {
     responsesCount: responses.length,
-    responses,
-    selectedImages,
+    selectedImagesKeys: Object.keys(selectedImages),
     uploadedImagesCount: uploadedImages.length,
-    additionalNotes
+    hasAdditionalNotes: !!additionalNotes
   })
 
-  // Build the comprehensive prompt from all user inputs
-  const userResponses = responses.filter(r => r && r.trim()).join('. ')
-  
-  // Extract image selections for reference
-  const styleSelections = selectedImages.style?.map((img: any) => img.label).join(', ') || 'not specified'
-  const colorSelections = selectedImages.color?.map((img: any) => img.label).join(', ') || 'not specified'
-  const sizeSelections = selectedImages.size?.map((img: any) => img.label).join(', ') || 'not specified'
-  const placementSelections = selectedImages.placement?.map((img: any) => img.label).join(', ') || 'not specified'
-  
-  // Construct AI prompt
-  const fullPrompt = `Create a tattoo design based on the following:
-User responses: ${userResponses}
-Style preferences: ${styleSelections}
-Color preferences: ${colorSelections}
-Size preferences: ${sizeSelections}
-Placement preferences: ${placementSelections}
-${additionalNotes ? `Additional notes: ${additionalNotes}` : ''}`
-
-  console.log('🎯 Generated prompt for AI:', fullPrompt)
-
   try {
-    // Call the tattoo generation API endpoint
-    const response = await fetch('/api/tattoo-prompt', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        prompt: fullPrompt,
-        userResponses,
-        selectedImages,
-        uploadedImages: uploadedImages.length,
-        additionalNotes
-      })
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.error || 'Failed to generate tattoo images')
+    // Step 1: Build UserAnswers for Groq
+    // Card 7 has TWO sources:
+    // 1. selectedImages (style, color, optional placement/size from gallery)
+    // 2. responses[6] (optional text note)
+    
+    // Extract with fallbacks
+    const styleLabel = selectedImages?.style?.[0]?.label || selectedImages?.style?.[0]?.alt || "Traditional"
+    const colorLabel = selectedImages?.color?.[0]?.label || selectedImages?.color?.[0]?.alt || "Black and White"
+    
+    const placementLabels = selectedImages?.placement && selectedImages.placement.length > 0
+      ? selectedImages.placement.map((img: any) => img.label || img.alt).join(", ")
+      : "Chest"
+    
+    const sizeLabels = selectedImages?.size && selectedImages.size.length > 0
+      ? selectedImages.size.map((img: any) => img.label || img.alt).join(", ")
+      : "Large"
+    
+    // Build image selections summary
+    const imageSelections = [
+      `Style: ${styleLabel}`,
+      `Color: ${colorLabel}`,
+      `Placement: ${placementLabels}`,
+      `Size: ${sizeLabels}`
+    ]
+    
+    // Combine image selections with optional text note
+    const card7Parts = [imageSelections.join(" | ")]
+    if (responses[6]) {
+      card7Parts.push(`Note: ${responses[6]}`)
+    }
+    
+    const card7Content = card7Parts.join(" - ")
+    
+    const answers: UserAnswers = {
+      card1: responses[0] || "",
+      card2: responses[1] || "",
+      card3: responses[2] || "",
+      card4: responses[3] || "",
+      card5: responses[4] || "",
+      card6: responses[5] || "",
+      card7: card7Content, // Combine selectedImages + text note
+      card8: additionalNotes || "",
     }
 
-    const result = await response.json()
+    console.log("🤖 [GROQ] Generating optimized prompts...")
+    console.log("📋 User Answers:", answers)
     
-    console.log('✅ AI Generation complete, received images:', result)
+    // Step 2: Get prompts from Groq server action
+    const promptResult = await generateFinalPromptsAction(answers)
     
-    // Return the generated images
-    return result.images || []
+    if (!promptResult.success) {
+      throw new Error(promptResult.error)
+    }
     
+    const promptResponse = promptResult.prompts
+    
+    console.log("✅ [GROQ] Prompts generated:")
+    console.log("  📝 Positive:", promptResponse.positivePrompt.substring(0, 100) + "...")
+    console.log("  🚫 Negative:", promptResponse.negativePrompt.substring(0, 100) + "...")
+    console.log("  🎨 Style:", promptResponse.style)
+    console.log("  💭 Mood:", promptResponse.mood)
+
+    // Step 3: Generate images with Stability AI server action
+    console.log("🖼️ [STABILITY] Generating tattoo images...")
+    
+    const imageResult = await generateTattooImagePairAction(
+      promptResponse.positivePrompt,
+      promptResponse.negativePrompt,
+      "sd3.5-large" // Use best model for now
+    )
+
+    if (!imageResult.success) {
+      throw new Error(imageResult.error)
+    }
+
+    const [colorImage, stencilImage] = imageResult.images
+
+    // Step 4: Format for frontend
+    const generatedImages: GeneratedImage[] = [
+      {
+        id: colorImage.id,
+        url: colorImage.url,
+        type: "color",
+        option: 1,
+        label: `${promptResponse.style} - Full Color`,
+      },
+      {
+        id: stencilImage.id,
+        url: stencilImage.url,
+        type: "stencil",
+        option: 1,
+        label: `${promptResponse.style} - Stencil Outline`,
+      }
+    ]
+
+    console.log("✅ [AI] Generation pipeline complete!")
+    console.log(`  🎨 Generated ${generatedImages.length} images`)
+    
+    return generatedImages
+
   } catch (error) {
-    console.error('❌ Error generating tattoo images:', error)
+    console.error("❌ [AI] Tattoo generation failed:", error)
+    
+    // Log with full context
+    logError(error, "AI_GENERATION", {
+      operation: "generateTattooImages",
+      responsesCount: responses.length,
+      selectedImagesKeys: Object.keys(selectedImages),
+      uploadedImagesCount: uploadedImages.length,
+      hasAdditionalNotes: !!additionalNotes
+    })
+    
+    // Re-throw to trigger user-friendly error popup
     throw error
   }
 }

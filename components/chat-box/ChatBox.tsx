@@ -16,6 +16,7 @@ interface ChatBoxProps {
   isCard7: boolean
   isCard8: boolean
   isContentFading: boolean
+  isLoadingAIQuestion?: boolean
   sentMessages: string[]
   showMessageAnimation: boolean
   selectedStyleImages: {[key: string]: ImageObject[]} | ImageObject[]  // Accept both old and new format
@@ -44,6 +45,7 @@ export function ChatBox({
   isCard7,
   isCard8,
   isContentFading,
+  isLoadingAIQuestion = false,
   sentMessages,
   showMessageAnimation,
   selectedStyleImages,
@@ -85,7 +87,7 @@ export function ChatBox({
           <div className="space-y-3">
             {/* AI-style text bubble for the question - Responsive */}
             {!isCard7 ? (
-              // Questions 1-6: Single question bubble
+              // Questions 1-6 and Card 8: Single question bubble
               <div className="relative w-fit max-w-[90%] sm:max-w-md ml-2 sm:ml-4 mt-4">
                 {/* Outer gradient border container */}
                 <div className="p-[2px] bg-gradient-to-r from-orange-500 to-purple-600 rounded-2xl">
@@ -93,6 +95,16 @@ export function ChatBox({
                     <p className="text-white font-medium text-sm sm:text-base lg:text-lg">
                       {currentCard?.questionText}
                     </p>
+                    
+                    {/* Loading overlay for Card 8 AI question */}
+                    {isLoadingAIQuestion && (
+                      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-orange-500 animate-pulse" />
+                          <span className="text-orange-400 text-sm">Crafting your question...</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
                 {/* Chat bubble tail - positioned at bottom left edge */}

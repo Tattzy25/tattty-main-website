@@ -39,7 +39,7 @@ export function GenerationResults({
             Your Ink. Your Story.
           </h1>
           <p className="text-gray-400 text-sm sm:text-base">
-            4 unique designs created just for you
+            2 unique designs created just for you
           </p>
         </div>
       </div>

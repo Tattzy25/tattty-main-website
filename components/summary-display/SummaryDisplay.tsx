@@ -41,8 +41,6 @@ export function SummaryDisplay({
           
           if (!message) return null
 
-          const IconComponent = card.icon
-
           return (
             <div key={index} className="relative">
               <TimelineBall />
@@ -50,9 +48,6 @@ export function SummaryDisplay({
               <GlassCard className="rounded-2xl">
                 <GlassCardHeader className="pb-2">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-purple-600 flex items-center justify-center flex-shrink-0">
-                      <IconComponent className="w-4 h-4 text-white" />
-                    </div>
                     <p className="text-sm font-medium text-white">{card.subtitle}</p>
                   </div>
                 </GlassCardHeader>
