@@ -208,14 +208,26 @@
   }
 }
 
-/* Card Stack for Questions */
+/* Card Stack for Questions - mobile-first
+   On mobile we remove negative top margins so the headline and cards
+   sit naturally at the top and grow downward. Desktop keeps the
+   -100px overlap for visual stacking via a media query. */
 .question-container {
   position: relative;
-  margin-top: -100px;
-  width: 360px;
+  margin-top: 0; /* mobile: no negative pull */
+  width: 100%;
+  max-width: 360px;
   margin-left: auto;
   margin-right: auto;
-  height: 300px;
+  height: auto;
+}
+
+@media (min-width: 1024px) {
+  .question-container {
+    margin-top: -100px;
+    height: 300px;
+    width: 360px;
+  }
 }
 
 .question-container > * {

@@ -1,1 +1,0 @@
-export { Sketchpad } from './Sketchpad'

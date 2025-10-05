@@ -8,7 +8,7 @@ import { GlassTextarea } from "@/components/ui/glass-textarea"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, ArrowRight, Sparkles, Heart, MapPin, Users, Calendar, Building, Palette, Music, Camera, Coffee, Car, Home, Send, Mic, Clock, SkipForward, ChevronDown, Check } from "lucide-react"
-import { Sketchpad } from "@/components/sketchpad"
+import { StateCard } from "@/components/states"
 import { ChatBox } from "@/components/chat-box"
 import { WelcomeScreen } from "@/components/welcome-screen"
 import { ImageGallery, type ImageObject } from "@/components/image-gallery"
@@ -413,14 +413,6 @@ export default function InkdPage() {
 
   return (
     <MainLayout>
-      {/* Animated Background */}
-      <div className="fixed inset-0 overflow-hidden">
-        <div className="absolute -top-40 -left-40 w-80 h-80 bg-gradient-to-r from-orange-400 to-pink-500 rounded-full blur-3xl opacity-20 animate-pulse"></div>
-        <div className="absolute -bottom-40 -right-40 w-80 h-80 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full blur-3xl opacity-20 animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/4 w-60 h-60 bg-gradient-to-r from-green-400 to-cyan-500 rounded-full blur-3xl opacity-15 animate-pulse delay-2000"></div>
-        <div className="absolute top-1/4 right-1/4 w-40 h-40 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full blur-3xl opacity-25 animate-pulse delay-500"></div>
-      </div>
-
       {/* MAIN QUESTIONNAIRE - Always rendered */}
       <>
         {/* Hero Headline - Dynamic based on current question */}
@@ -502,7 +494,7 @@ export default function InkdPage() {
             handleNext={handleNext}
           />
         
-          {/* Right Side - Dynamic galleries for Card 7, Sketchpad for others */}
+          {/* Right Side - Dynamic galleries for Card 7, StateCard for others */}
           {isCard7 ? (
             <div className="w-full lg:w-[45%] flex flex-col gap-6 p-4 pt-32 overflow-y-auto max-h-screen hide-scrollbar">
               {card7Categories.map((category) => (
@@ -516,11 +508,7 @@ export default function InkdPage() {
               ))}
             </div>
           ) : (
-            <Sketchpad 
-              showCarousels={false}
-              selectedStyleImages={[]}
-              onStyleSelect={() => {}}
-            />
+            <StateCard />
           )}
         </div>
       </>

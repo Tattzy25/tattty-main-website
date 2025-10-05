@@ -1,0 +1,330 @@
+@import url('https://fonts.googleapis.com/css2?family=Rock+Salt&display=swap');
+
+.animated-outer {
+  width: 400px;
+  height: 300px;
+  border-radius: 10px;
+  padding: 1px;
+  background: linear-gradient(135deg, #ff6b35, #9333ea);
+  position: relative;
+}
+
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 6s ease-in-out infinite;
+}
+
+.animated-dot {
+  width: 8px;
+  height: 8px;
+  position: absolute;
+  background: linear-gradient(135deg, #ff6b35, #9333ea);
+  box-shadow: 
+    0 0 20px #ff6b35,
+    0 0 40px #9333ea,
+    0 0 60px #ff6b35;
+  border-radius: 50%;
+  z-index: 2;
+  right: 10%;
+  top: 10%;
+  animation: moveDot 6s linear infinite;
+}
+
+.animated-dot::before,
+.animated-dot::after {
+  content: '';
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #ff6b35;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.animated-dot::before {
+  width: 6px;
+  height: 6px;
+  box-shadow: 0 0 15px #ff6b35;
+  animation: sparkRotate 2s linear infinite;
+}
+
+.animated-dot::after {
+  background: #9333ea;
+  box-shadow: 0 0 15px #9333ea;
+  animation: sparkRotate 2s linear infinite reverse;
+}
+
+@keyframes sparkRotate {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg) translateX(12px);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg) translateX(12px);
+  }
+}
+
+.trail-star {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.trail-star::before,
+.trail-star::after {
+  content: '';
+  position: absolute;
+  background: linear-gradient(135deg, #ff6b35, #9333ea);
+  top: 50%;
+  left: 50%;
+}
+
+.trail-star::before {
+  width: 6px;
+  height: 2px;
+  transform: translate(-50%, -50%);
+}
+
+.trail-star::after {
+  width: 2px;
+  height: 6px;
+  transform: translate(-50%, -50%);
+}
+
+@keyframes moveDot {
+  0%, 100% {
+    top: 10%;
+    right: 10%;
+  }
+  25% {
+    top: 10%;
+    right: calc(100% - 35px);
+  }
+  50% {
+    top: calc(100% - 30px);
+    right: calc(100% - 35px);
+  }
+  75% {
+    top: calc(100% - 30px);
+    right: 10%;
+  }
+}
+
+.animated-card {
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  border-radius: 9px;
+  border: solid 1px rgba(255, 107, 53, 0.3);
+  background: 
+    linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 50%),
+    #000000;
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  filter: blur(0.5px);
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.1),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  color: #fff;
+  overflow: hidden;
+}
+
+.animated-ray {
+  width: 250px;
+  height: 50px;
+  border-radius: 100px;
+  position: absolute;
+  background: linear-gradient(90deg, #ff6b35, #9333ea);
+  opacity: 0.3;
+  box-shadow: 0 0 50px #ff6b35;
+  filter: blur(10px);
+  transform-origin: 10%;
+  top: 0%;
+  left: 0;
+  transform: rotate(40deg);
+}
+
+.line {
+  width: 100%;
+  height: 1px;
+  position: absolute;
+  background-color: #2c2c2c;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.topl {
+  top: 12%;
+  background: linear-gradient(90deg, #ff6b35 30%, #9333ea 70%);
+}
+
+.bottoml {
+  bottom: 12%;
+}
+
+.leftl {
+  left: 12%;
+  width: 1px;
+  height: 100%;
+  background: linear-gradient(180deg, #ff6b35 30%, #9333ea 70%);
+}
+
+.rightl {
+  right: 12%;
+  width: 1px;
+  height: 100%;
+}
+
+.neon-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.neon-sign {
+  font-family: 'Rock Salt', cursive;
+  font-size: 56px;
+  font-weight: bold;
+  letter-spacing: 6px;
+  color: #ff6b35;
+  -webkit-text-stroke: 2px #9333ea;
+  text-stroke: 2px #9333ea;
+  text-shadow: 
+    0 0 2px #9333ea;
+  animation: flicker 3s infinite alternate;
+  position: relative;
+}
+
+@keyframes flicker {
+  0%, 18%, 22%, 25%, 53%, 57%, 100% {
+    -webkit-text-stroke: 2px #9333ea;
+    text-stroke: 2px #9333ea;
+    text-shadow:
+      0 0 10px #9333ea,
+      0 0 20px #9333ea,
+      0 0 30px #9333ea,
+      0 0 40px #9333ea,
+      0 0 50px #ff6b35;
+  }
+  20%, 24%, 55% {
+    -webkit-text-stroke: 2px #9333ea;
+    text-stroke: 2px #9333ea;
+    text-shadow:
+      0 0 5px #9333ea,
+      0 0 10px #9333ea,
+      0 0 15px #9333ea;
+  }
+}
+
+.drawing-line {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: draw 8s ease-in-out infinite;
+}
+
+.drawing-line-1 {
+  animation-delay: 0s;
+}
+
+.drawing-line-2 {
+  animation-delay: 2s;
+}
+
+@keyframes draw {
+  0% {
+    stroke-dashoffset: 1000;
+    opacity: 0.3;
+  }
+  50% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.3;
+  }
+}
+
+.sparkle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: linear-gradient(135deg, #ff6b35, #9333ea);
+  border-radius: 50%;
+  box-shadow: 0 0 6px #ff6b35, 0 0 10px #9333ea;
+  animation: sparkleAnim 2s ease-in-out infinite;
+}
+
+@keyframes sparkleAnim {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.sparkle-1 { top: 20%; left: 20%; animation-delay: 0s; }
+.sparkle-2 { top: 25%; right: 25%; animation-delay: 0.2s; }
+.sparkle-3 { bottom: 30%; left: 30%; animation-delay: 0.4s; }
+.sparkle-4 { bottom: 25%; right: 20%; animation-delay: 0.6s; }
+.sparkle-5 { top: 35%; left: 15%; animation-delay: 0.8s; }
+.sparkle-6 { top: 40%; right: 18%; animation-delay: 1s; }
+.sparkle-7 { bottom: 35%; left: 22%; animation-delay: 1.2s; }
+.sparkle-8 { bottom: 40%; right: 28%; animation-delay: 1.4s; }
+.sparkle-9 { top: 50%; left: 12%; animation-delay: 1.6s; }
+.sparkle-10 { top: 48%; right: 14%; animation-delay: 1.8s; }
+.sparkle-11 { top: 30%; left: 50%; animation-delay: 2s; }
+.sparkle-12 { bottom: 32%; right: 48%; animation-delay: 2.2s; }
+
+.hint-text {
+  position: absolute;
+  top: 20px;
+  font-size: 14px;
+  color: #ffffff;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 2px;
+  z-index: 5;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animated-svg {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
