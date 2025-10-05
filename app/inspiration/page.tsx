@@ -10,146 +10,98 @@ import MainLayout from "@/components/main-layout"
 
 // Define the category type
 interface Category {
-  id: number
-  name: string
+  id: string
+  title: string
+  description: string
   images: {
     id: number
     url: string
     alt: string
   }[]
+  category: string
+  slug: string
+  isFeatured: boolean
 }
-
-// Define our tattoo categories with empty image arrays
-// These will be populated with real images
-const tattooCategories: Category[] = [
-  {
-    id: 1,
-    name: "Traditional",
-    images: [],
-  },
-  {
-    id: 2,
-    name: "Neo-Traditional",
-    images: [],
-  },
-  {
-    id: 3,
-    name: "Realism",
-    images: [],
-  },
-  {
-    id: 4,
-    name: "Watercolor",
-    images: [],
-  },
-  {
-    id: 5,
-    name: "Tribal",
-    images: [],
-  },
-  {
-    id: 6,
-    name: "Japanese",
-    images: [],
-  },
-  {
-    id: 7,
-    name: "Blackwork",
-    images: [],
-  },
-  {
-    id: 8,
-    name: "Minimalist",
-    images: [],
-  },
-  {
-    id: 9,
-    name: "Geometric",
-    images: [],
-  },
-  {
-    id: 10,
-    name: "Dotwork",
-    images: [],
-  },
-  {
-    id: 11,
-    name: "Old School",
-    images: [],
-  },
-  {
-    id: 12,
-    name: "New School",
-    images: [],
-  },
-  {
-    id: 13,
-    name: "Biomechanical",
-    images: [],
-  },
-  {
-    id: 14,
-    name: "Portrait",
-    images: [],
-  },
-  {
-    id: 15,
-    name: "Script",
-    images: [],
-  },
-  {
-    id: 16,
-    name: "Floral",
-    images: [],
-  },
-  {
-    id: 17,
-    name: "Animal",
-    images: [],
-  },
-  {
-    id: 18,
-    name: "Mandala",
-    images: [],
-  },
-  {
-    id: 19,
-    name: "Abstract",
-    images: [],
-  },
-  {
-    id: 20,
-    name: "Surrealism",
-    images: [],
-  },
-]
-
-// This function will be used to add images to categories
-// You'll call this function with your image URLs
-export function addImagesToCategory(categoryId: number, imageUrls: string[]) {
-  const category = tattooCategories.find((cat) => cat.id === categoryId)
-  if (category) {
-    const startId = category.images.length + 1
-    const newImages = imageUrls.map((url, index) => ({
-      id: startId + index,
-      url,
-      alt: `${category.name} tattoo design ${startId + index}`,
-    }))
-    category.images.push(...newImages)
-  }
-}
-
-// Example of how to add images (you'll replace these with your actual URLs)
-// This is just for demonstration - you'll provide your own URLs
-addImagesToCategory(1, [
-  "/placeholder.svg?height=300&width=300&text=Traditional_1",
-  "/placeholder.svg?height=300&width=300&text=Traditional_2",
-  "/placeholder.svg?height=300&width=300&text=Traditional_3",
-])
 
 export default function InspirationPage() {
-  // Filter out categories with no images
-  const categories = tattooCategories.filter((category) => category.images.length > 0)
+  const [categories, setCategories] = useState<Category[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Load inspiration data on mount
+  useEffect(() => {
+    const loadInspiration = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+
+        const response = await fetch('/api/inspiration')
+        if (!response.ok) {
+          throw new Error(`Failed to fetch inspiration: ${response.status} ${response.statusText}`)
+        }
+
+        const data = await response.json()
+        setCategories(data.filter((cat: Category) => cat.images.length > 0))
+      } catch (err) {
+        console.error('Error loading inspiration:', err)
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load inspiration gallery.'
+        setError(errorMessage)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadInspiration()
+  }, [])
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="py-24 relative">
+          <div className="absolute inset-0 bg-gradient-to-b from-black via-zinc-900 to-black"></div>
+          <div className="container relative z-10 px-4 sm:px-6 lg:px-8 mx-auto">
+            <div className="text-center mb-16">
+              <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-red-500 via-amber-400 to-purple-600 bg-clip-text text-transparent">
+                Tattoo Inspiration
+              </h1>
+              <div className="flex items-center justify-center min-h-[200px]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </MainLayout>
+    )
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <MainLayout>
+        <div className="py-24 relative">
+          <div className="absolute inset-0 bg-gradient-to-b from-black via-zinc-900 to-black"></div>
+          <div className="container relative z-10 px-4 sm:px-6 lg:px-8 mx-auto">
+            <div className="text-center mb-16">
+              <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-red-500 via-amber-400 to-purple-600 bg-clip-text text-transparent">
+                Tattoo Inspiration
+              </h1>
+              <p className="text-zinc-300 max-w-2xl mx-auto mb-8">
+                Error loading inspiration gallery.
+              </p>
+              <p className="text-red-400 text-sm">{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        </div>
+      </MainLayout>
+    )
+  }
 
   // If no categories have images yet, show a message
   if (categories.length === 0) {
@@ -201,13 +153,13 @@ export default function InspirationPage() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent z-10"></div>
                 <Image
                   src={category.images[0]?.url || "/placeholder.svg"}
-                  alt={category.name}
+                  alt={category.title}
                   width={400}
                   height={300}
                   className="w-full h-64 object-cover transition-transform duration-500 group-hover:scale-110"
                 />
                 <div className="absolute bottom-0 left-0 right-0 p-4 z-20">
-                  <h2 className="text-xl font-bold text-white">{category.name}</h2>
+                  <h2 className="text-xl font-bold text-white">{category.title}</h2>
                   <p className="text-zinc-300 text-sm">{category.images.length} designs</p>
                 </div>
               </div>
@@ -216,7 +168,7 @@ export default function InspirationPage() {
 
           {categories.map((category) => (
             <div key={category.id} id={`category-${category.id}`} className="mb-16">
-              <h2 className="text-2xl font-bold mb-6 text-white">{category.name}</h2>
+              <h2 className="text-2xl font-bold mb-6 text-white">{category.title}</h2>
               <CategoryCarousel images={category.images} />
             </div>
           ))}
@@ -266,7 +218,6 @@ function CategoryCarousel({ images }: { images: Category["images"] }) {
       <div
         ref={carouselRef}
         className="flex overflow-x-auto scrollbar-hide snap-x snap-mandatory gap-4 pb-4"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {images.map((image) => (
           <div

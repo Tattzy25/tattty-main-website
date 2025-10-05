@@ -28,9 +28,14 @@ export function canProceedToNext(context: ValidationContext): boolean {
     return !!sentMessages[currentStep]
   }
   
-  // Card 7 (Visual selection): require Style AND Color to be selected
+  // Card 7 (Visual selection): require minimum 2 images to be selected total
   if (currentStep === totalQuestions) {
-    return selectedImages.style.length > 0 && selectedImages.color.length > 0
+    const totalSelectedImages = 
+      selectedImages.style.length + 
+      selectedImages.color.length + 
+      selectedImages.size.length + 
+      selectedImages.placement.length
+    return totalSelectedImages >= 2
   }
   
   // Card 8 (Final card): optional - user can always proceed (it's the final review)

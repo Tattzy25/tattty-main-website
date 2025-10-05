@@ -37,8 +37,8 @@ export function RightSidePanel({
         {card7Categories.map((category) => (
           <ImageGallery
             key={category.id}
-            images={categoryImages[category.id]}
-            selectedImages={selectedImages[category.id]}
+            images={categoryImages[category.id] || []}
+            selectedImages={selectedImages[category.id] || []}
             onImageSelect={(image) => onImageSelect(category.id, image)}
             title={category.label}
           />

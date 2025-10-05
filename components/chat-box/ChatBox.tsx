@@ -89,9 +89,9 @@ export function ChatBox({
               <div className="relative w-fit max-w-[90%] sm:max-w-md ml-2 sm:ml-4 mt-4">
                 {/* Outer gradient border container */}
                 <div className="p-[2px] bg-gradient-to-r from-orange-500 to-purple-600 rounded-2xl">
-                  <div className="bg-black/20 backdrop-blur-sm rounded-2xl px-2 sm:px-3 py-1 sm:py-2 relative">
+                  <div className="bg-black/80 backdrop-blur-sm rounded-2xl px-2 sm:px-3 py-1 sm:py-2 relative">
                     <p className="text-white font-medium text-sm sm:text-base lg:text-lg">
-                      {currentCard?.subtitle}
+                      {currentCard?.questionText}
                     </p>
                   </div>
                 </div>
@@ -175,16 +175,30 @@ export function ChatBox({
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 px-2">
                   {Object.entries(selectedStyleImages).map(([category, images]) => 
                     images.map((image: ImageObject, idx: number) => (
-                      <div key={`${category}-${idx}`} className="relative aspect-square">
-                        <Image 
-                          src={image.url} 
-                          alt={`${category} - ${image.label}`} 
-                          fill
-                          className="object-cover rounded-xl border-2 border-orange-500 shadow-md" 
-                          unoptimized 
-                        />
-                        <span className="absolute -top-2 -left-2 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-md capitalize">{category}</span>
-                        <span className="absolute -bottom-2 -right-2 bg-purple-600 text-white text-xs font-semibold px-2 py-1 rounded-full shadow-md">{image.label}</span>
+                      <div 
+                        key={`${category}-${idx}`} 
+                        className="bg-black/90 backdrop-blur-md rounded-[2rem] overflow-hidden border border-orange-500 shadow-2xl shadow-orange-500/20 transition-all duration-300 hover:scale-[1.02] group"
+                      >
+                        {/* Image Section - Rounded with padding */}
+                        <div className="relative aspect-square p-2">
+                          <div className="relative w-full h-full rounded-[1.5rem] overflow-hidden">
+                            <Image 
+                              src={image.url} 
+                              alt={`${category} - ${image.label}`} 
+                              fill
+                              className="object-cover" 
+                              unoptimized 
+                            />
+                            {/* Gradient overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          </div>
+                        </div>
+                        
+                        {/* Info Section - Bottom card with category and label */}
+                        <div className="px-3 pb-3 space-y-1">
+                          <p className="text-xs font-bold text-orange-400 uppercase tracking-wide truncate">{category}</p>
+                          <p className="text-xs font-medium text-white/80 truncate group-hover:text-white transition-colors duration-300">{image.label}</p>
+                        </div>
                       </div>
                     ))
                   )}
