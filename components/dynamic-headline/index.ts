@@ -1,0 +1,1 @@
+export { DynamicHeadline } from './DynamicHeadline'

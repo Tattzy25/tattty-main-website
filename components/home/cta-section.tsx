@@ -4,15 +4,16 @@ import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { SectionTitle } from "@/components/ui/section-title"
 
 export function CTASection() {
   return (
     <section className="py-24 relative">
       <div className="absolute inset-0 bg-gradient-to-r from-red-900/30 via-black to-purple-900/30"></div>
       <div className="container relative z-10 text-center px-4 sm:px-6 lg:px-8 mx-auto">
-        <h2 className="text-4xl font-bold mb-6 bg-gradient-to-r from-red-500 via-amber-400 to-purple-600 bg-clip-text text-transparent">
+        <SectionTitle className="mb-6">
           Ready to Transform Your Story Into Art?
-        </h2>
+        </SectionTitle>
         <p className="text-xl text-zinc-300 max-w-2xl mx-auto mb-8">
           Create a tattoo that's as unique as your journey. Start with just 4 questions.
         </p>

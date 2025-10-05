@@ -1,6 +1,7 @@
 "use client"
 
 import Image from "next/image"
+import { SectionTitle } from "@/components/ui/section-title"
 
 const testimonials = [
   {
@@ -32,9 +33,7 @@ export function TestimonialsSection() {
       <div className="absolute inset-0 bg-gradient-to-b from-black via-zinc-900 to-black"></div>
       <div className="container relative z-10 px-4 sm:px-6 lg:px-8 mx-auto">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-red-500 via-amber-400 to-purple-600 bg-clip-text text-transparent">
-            Ink That Speaks
-          </h2>
+          <SectionTitle>Ink That Speaks</SectionTitle>
           <p className="text-zinc-300 max-w-2xl mx-auto">
             Don't just take our word for it. Hear from those who've already transformed their stories.
           </p>

@@ -4,8 +4,6 @@ import type React from "react"
 
 import { useState, useRef, type ChangeEvent } from "react"
 import { Button } from "@/components/ui/button"
-import { X, ImageIcon } from "lucide-react"
-import Image from "next/image"
 
 interface ImageUploadProps {
   onImageSelected: (file: File) => void
@@ -107,10 +105,12 @@ export function ImageUpload({
       {preview ? (
         <div className="relative group">
           <div className={`relative overflow-hidden rounded-lg border border-gray-200 ${aspectRatioClass}`}>
-            <Image src={preview || "/placeholder.svg"} alt="Preview" fill className="object-cover" />
+            <img src={preview} alt="Preview" className="absolute inset-0 w-full h-full object-cover" />
             <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
               <Button variant="destructive" size="icon" onClick={removeImage} className="rounded-full">
-                <X className="h-4 w-4" />
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </Button>
             </div>
           </div>
@@ -127,10 +127,19 @@ export function ImageUpload({
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
-          <ImageIcon className="h-10 w-10 text-gray-400 mb-2" />
+          <svg className="h-10 w-10 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
           <p className="text-sm font-medium text-center">{label}</p>
           <p className="text-xs text-gray-500 mt-1 text-center">Drag & drop or click to browse</p>
-          <input type="file" ref={fileInputRef} onChange={handleFileChange} accept={accept} className="hidden" />
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept={accept}
+            className="hidden"
+            aria-label={label}
+          />
         </div>
       )}
       {error && <p className="text-sm text-red-500 mt-1">{error}</p>}

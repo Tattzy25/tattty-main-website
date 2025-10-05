@@ -1,6 +1,7 @@
 "use client"
 
 import { Brain, Feather, Compass, Heart, Skull, Zap } from "lucide-react"
+import { SectionTitle } from "@/components/ui/section-title"
 
 const features = [
   {
@@ -47,9 +48,7 @@ export function FeaturesSection() {
       <div className="absolute inset-0 bg-gradient-to-b from-zinc-900 via-black to-zinc-900"></div>
       <div className="container relative z-10 px-4 sm:px-6 lg:px-8 mx-auto">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-red-500 via-amber-400 to-purple-600 bg-clip-text text-transparent">
-            The Tattty Difference
-          </h2>
+          <SectionTitle>The Tattty Difference</SectionTitle>
           <p className="text-zinc-300 max-w-2xl mx-auto">What makes our AI tattoo generation truly legendary</p>
         </div>
 
