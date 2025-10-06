@@ -6,6 +6,7 @@ import {
   BarChartIcon,
   CreditCardIcon,
   DatabaseIcon,
+  GitBranchIcon,
   ImageIcon,
   LayoutDashboardIcon,
   PaletteIcon,
@@ -48,6 +49,11 @@ const adminData = {
       title: "Generations",
       url: "/admin/generations",
       icon: ImageIcon,
+    },
+    {
+      title: "Pipeline",
+      url: "/admin/pipeline",
+      icon: GitBranchIcon,
     },
     {
       title: "Batch Calls",

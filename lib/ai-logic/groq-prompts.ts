@@ -69,18 +69,15 @@ Return ONLY the follow-up question text. No preamble, no explanation, no JSON.`
  * SECOND CALL - After Card 8 (Follow-up Answer)
  * Purpose: Generate final AI-ready prompts for image generation
  * 
- * NO FALLBACKS - Card 8 answer is REQUIRED
+ * Cards 1-6 are optional questionnaire responses
+ * Card 7 contains image selections (REQUIRED: style + color) + optional text note
+ * Card 8 is optional additional notes
  */
 export function generateFinalPrompt(answers: UserAnswers): string {
-  // VALIDATE - NO FALLBACKS
-  if (!answers.card1) throw new Error("Card 1 (Style) is required")
-  if (!answers.card2) throw new Error("Card 2 (Color) is required")
-  if (!answers.card3) throw new Error("Card 3 (Placement) is required")
-  if (!answers.card4) throw new Error("Card 4 (Size) is required")
-  if (!answers.card5) throw new Error("Card 5 (Meaning) is required")
-  if (!answers.card6) throw new Error("Card 6 (Avoid) is required")
-  if (!answers.card7) throw new Error("Card 7 (Details) is required")
-  if (!answers.card8) throw new Error("Card 8 (Follow-up) is required for final prompt generation")
+  // VALIDATE ONLY CARD 7 - Image selections are embedded here
+  if (!answers.card7 || !answers.card7.includes("Style:") || !answers.card7.includes("Color:")) {
+    throw new Error("Style and Color selections are required. Card 7 must contain image gallery selections.")
+  }
 
   return `You are an expert AI prompt engineer specializing in tattoo design generation using Stability AI Diffusion models.
 
@@ -88,14 +85,14 @@ ROLE: Transform user answers into optimized positive and negative prompts for ta
 
 COMPLETE USER PROFILE:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Style: ${answers.card1}
-Colors: ${answers.card2}
-Placement: ${answers.card3}
-Size: ${answers.card4}
-Meaning: ${answers.card5}
-Avoid: ${answers.card6}
-Details: ${answers.card7}
-Follow-up: ${answers.card8}
+Life Stage: ${answers.card1 || "Not specified"}
+Identity: ${answers.card2 || "Not specified"}
+Emotions: ${answers.card3 || "Not specified"}
+Symbols: ${answers.card4 || "Not specified"}
+Themes: ${answers.card5 || "Not specified"}
+Avoid: ${answers.card6 || "No specific restrictions"}
+Visual Selections & Details: ${answers.card7}
+Additional Notes: ${answers.card8 || "None"}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 TASK: Generate prompts optimized for Stability AI Diffusion 3.5 with the following requirements:

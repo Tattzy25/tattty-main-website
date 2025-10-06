@@ -1,4 +1,3 @@
-import { StateCard } from "@/components/states"
 import { ImageGallery, type ImageObject } from "@/components/image-gallery"
 import { SummaryDisplay } from "@/components/summary-display"
 import { type QuestionCard } from "@/data/tattty-qs/types"
@@ -60,6 +59,6 @@ export function RightSidePanel({
     )
   }
 
-  // Questions 1-6: Show animated state card
-  return <StateCard />
+  // Questions 1-6: Show nothing
+  return null
 }

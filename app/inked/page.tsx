@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import MainLayout from "@/components/main-layout"
-import { StateCard } from "@/components/states"
 import { ChatBox } from "@/components/chat-box"
 import { WelcomeScreen } from "@/components/welcome-screen"
 import { GenerationResults } from "@/components/generation-results"
@@ -252,7 +251,7 @@ export default function InkdPage() {
       {/* LOADING STATE - Full Screen */}
       {isGenerating && (
         <div className="fixed inset-0 z-40 bg-black flex items-center justify-center">
-          <StateCard />
+          <div className="text-white text-2xl">Generating...</div>
         </div>
       )}
 
@@ -267,8 +266,8 @@ export default function InkdPage() {
             />
           )}
 
-        <div className="relative min-h-screen flex flex-col lg:flex-row pt-8 pb-32">
-          {/* Chat Box - Always visible on the left */}
+        <div className="relative min-h-screen flex flex-col lg:flex-row pt-8 pb-32 justify-center items-center">
+          {/* Chat Box - Centered */}
           <ChatBox
             currentStep={currentStep}
             currentCard={isCard8 ? card8Data : currentCard}

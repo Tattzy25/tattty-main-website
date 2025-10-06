@@ -115,17 +115,26 @@ export async function generateTattooImages(
     // 1. selectedImages (style, color, optional placement/size from gallery)
     // 2. responses[6] (optional text note)
     
-    // Extract with fallbacks
-    const styleLabel = selectedImages?.style?.[0]?.label || selectedImages?.style?.[0]?.alt || "Traditional"
-    const colorLabel = selectedImages?.color?.[0]?.label || selectedImages?.color?.[0]?.alt || "Black and White"
+    // VALIDATE REQUIRED SELECTIONS - NO FALLBACKS
+    if (!selectedImages?.style?.[0]) {
+      throw new Error("Style selection is required. Please select a tattoo style before generating.")
+    }
+    if (!selectedImages?.color?.[0]) {
+      throw new Error("Color selection is required. Please select a color preference before generating.")
+    }
     
+    // Extract required fields
+    const styleLabel = selectedImages.style[0].label || selectedImages.style[0].alt
+    const colorLabel = selectedImages.color[0].label || selectedImages.color[0].alt
+    
+    // Extract optional fields with sensible messages
     const placementLabels = selectedImages?.placement && selectedImages.placement.length > 0
       ? selectedImages.placement.map((img: any) => img.label || img.alt).join(", ")
-      : "Chest"
+      : "No specific placement preference"
     
     const sizeLabels = selectedImages?.size && selectedImages.size.length > 0
       ? selectedImages.size.map((img: any) => img.label || img.alt).join(", ")
-      : "Large"
+      : "No specific size preference"
     
     // Build image selections summary
     const imageSelections = [

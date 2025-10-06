@@ -21,7 +21,6 @@ import {
   Lock,
   Grid,
   Copy,
-  LayoutDashboardIcon as Dashboard,
   Skull,
   Compass,
   Feather,
@@ -127,7 +126,6 @@ export const Icons = {
   edit: Edit,
   copy: Copy,
   grid: Grid,
-  dashboard: Dashboard,
   home: ({ ...props }) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"

@@ -129,13 +129,6 @@ export function StateCard({
             />
           </svg>
 
-          <div className="neon-container">
-            <div className="neon-sign">{title}</div>
-            {showSparkles && [...Array(12)].map((_, i) => (
-              <div key={i} className={`sparkle sparkle-${i + 1}`}></div>
-            ))}
-          </div>
-
           {showLines && (
             <>
               <div className="line topl"></div>

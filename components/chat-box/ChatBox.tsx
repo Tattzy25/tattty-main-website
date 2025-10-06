@@ -76,9 +76,7 @@ export function ChatBox({
 
   return (
     <div className="w-full lg:w-[55%] flex items-start justify-center p-4 pt-8 lg:pl-8 lg:pr-8 lg:pt-12 transition-all duration-500">
-      <GlassCard size="xl" className="relative max-w-2xl w-full rounded-[2.5rem]" style={{
-        boxShadow: '0 25px 50px rgba(139, 92, 246, 0.4), 0 15px 30px rgba(0, 0, 0, 0.6), 0 35px 70px rgba(138, 43, 226, 0.3)'
-      }}>
+      <GlassCard size="xl" className="relative max-w-2xl w-full rounded-[2.5rem]">
 
         <GlassCardHeader className={`text-center space-y-4 pb-8 transition-opacity duration-300 ${
           isContentFading ? 'opacity-0' : 'opacity-100'

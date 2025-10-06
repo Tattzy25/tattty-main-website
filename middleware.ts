@@ -8,18 +8,12 @@ export async function middleware(req: NextRequest) {
   const session = null
 
   // Protected routes that require authentication
-  const protectedRoutes = ["/dashboard", "/artist-dashboard", "/admin"]
+  const protectedRoutes = ["/dashboard"]
 
   // Check if the current path is a protected route
   const isProtectedRoute = protectedRoutes.some((route) => req.nextUrl.pathname.startsWith(route))
 
-  // Admin-only routes
-  const adminRoutes = ["/admin"]
-
-  // Check if the current path is an admin route
-  const isAdminRoute = adminRoutes.some((route) => req.nextUrl.pathname.startsWith(route))
-
-  // Auth routes (redirect to dashboard if already logged in)
+  // Auth routes
   const authRoutes = ["/auth/login", "/auth/register", "/auth/reset-password"]
 
   // Check if the current path is an auth route
@@ -40,5 +34,5 @@ export async function middleware(req: NextRequest) {
 
 // Only run middleware on specific paths
 export const config = {
-  matcher: ["/dashboard/:path*", "/artist-dashboard/:path*", "/admin/:path*", "/auth/:path*"],
+  matcher: ["/dashboard/:path*", "/auth/:path*"],
 }
