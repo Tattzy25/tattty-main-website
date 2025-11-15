@@ -7,7 +7,6 @@
 
 import { generateFollowUpQuestion, generateFinalPrompts } from "@/lib/ai-logic/groq-client"
 import type { UserAnswers, FinalPromptResponse } from "@/lib/ai-logic/groq-prompts"
-import { logError } from "@/lib/error-logging"
 
 /**
  * Server action: Generate AI follow-up question
@@ -28,9 +27,11 @@ export async function generateFollowUpQuestionAction(
     const error = err as Error
     console.error("❌ [SERVER ACTION] Failed to generate follow-up:", error)
     
-    logError(error, "AI_GENERATION", {
+    // Log error details for debugging (without throwing)
+    console.error("Error context:", {
       operation: "generateFollowUpQuestion",
-      answers: JSON.stringify(answers)
+      answers: JSON.stringify(answers),
+      stack: error.stack
     })
     
     return {
@@ -59,9 +60,11 @@ export async function generateFinalPromptsAction(
     const error = err as Error
     console.error("❌ [SERVER ACTION] Failed to generate prompts:", error)
     
-    logError(error, "AI_GENERATION", {
+    // Log error details for debugging (without throwing)
+    console.error("Error context:", {
       operation: "generateFinalPrompts",
-      answers: JSON.stringify(answers)
+      answers: JSON.stringify(answers),
+      stack: error.stack
     })
     
     return {
