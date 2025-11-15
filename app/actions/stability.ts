@@ -13,7 +13,6 @@ import {
   type GeneratedTattooImage,
   type StabilityGenerationParams
 } from "@/lib/ai-logic/stability-client"
-import { logError } from "@/lib/error-logging"
 
 /**
  * Server action: Generate a pair of tattoo images (color + stencil)
@@ -42,10 +41,12 @@ export async function generateTattooImagePairAction(
     const error = err as Error
     console.error("❌ [SERVER ACTION] Failed to generate images:", error)
     
-    logError(error, "AI_GENERATION", {
+    // Log error details for debugging (without throwing)
+    console.error("Error context:", {
       operation: "generateTattooImagePair",
       model,
-      promptLength: positivePrompt.length
+      promptLength: positivePrompt.length,
+      stack: error.stack
     })
     
     return {
@@ -85,9 +86,11 @@ export async function generateColorTattooAction(
     const error = err as Error
     console.error("❌ [SERVER ACTION] Failed to generate color tattoo:", error)
     
-    logError(error, "AI_GENERATION", {
+    // Log error details for debugging (without throwing)
+    console.error("Error context:", {
       operation: "generateColorTattoo",
-      model
+      model,
+      stack: error.stack
     })
     
     return {
@@ -127,9 +130,11 @@ export async function generateStencilTattooAction(
     const error = err as Error
     console.error("❌ [SERVER ACTION] Failed to generate stencil tattoo:", error)
     
-    logError(error, "AI_GENERATION", {
+    // Log error details for debugging (without throwing)
+    console.error("Error context:", {
       operation: "generateStencilTattoo",
-      model
+      model,
+      stack: error.stack
     })
     
     return {

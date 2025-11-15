@@ -147,6 +147,7 @@ export async function generateColorTattoo(
       promptLength: params.prompt.length,
       operation: "generateColorTattoo"
     })
+    throw error
   }
 }
 
@@ -233,6 +234,7 @@ export async function generateStencilTattoo(
       promptLength: stencilPrompt.length,
       operation: "generateStencilTattoo"
     })
+    throw error
   }
 }
 
@@ -364,6 +366,7 @@ export async function generateImageToImage(
       strength,
       model
     })
+    throw error
   }
 }
 
@@ -439,6 +442,7 @@ export async function generateWithSketchControl(
       operation: "generateWithSketchControl",
       controlStrength
     })
+    throw error
   }
 }
 
@@ -514,5 +518,6 @@ export async function generateWithStructureControl(
       operation: "generateWithStructureControl",
       controlStrength
     })
+    throw error
   }
 }
